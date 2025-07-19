@@ -1,0 +1,68 @@
+name: Docker Build
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'api/**'
+      - 'client/**'
+      - 'docker-compose.yml'
+      - 'Dockerfile'
+      - '.github/workflows/docker-build.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'api/**'
+      - 'client/**'
+      - 'docker-compose.yml'
+      - 'Dockerfile'
+      - '.github/workflows/docker-build.yml'
+
+jobs:
+  docker-build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Create docker-compose.override.yml for CI
+      run: |
+        cp docker-compose.override.yml.template docker-compose.override.yml
+        sed -i 's/YOUR_ORGANIZATION_HERE/test-org/g' docker-compose.override.yml
+        sed -i 's/YOUR_PERSONAL_ACCESS_TOKEN_HERE/test-token/g' docker-compose.override.yml
+    
+    - name: Build API Docker image
+      run: |
+        docker build -t azdevops-api:latest ./api
+    
+    - name: Build Client Docker image
+      run: |
+        docker build -t azdevops-client:latest ./client
+    
+    - name: Test Docker Compose
+      run: |
+        echo "Testing docker-compose configuration..."
+        docker-compose config
+    
+    - name: Check image sizes
+      run: |
+        echo "Docker image sizes:"
+        docker images azdevops-*
+    
+    # Optional: Push to container registry
+    # - name: Log in to Container Registry
+    #   uses: docker/login-action@v3
+    #   with:
+    #     registry: ghcr.io
+    #     username: ${{ github.actor }}
+    #     password: ${{ secrets.GITHUB_TOKEN }}
+    #
+    # - name: Push images
+    #   run: |
+    #     docker tag azdevops-api:latest ghcr.io/${{ github.repository }}/api:latest
+    #     docker tag azdevops-client:latest ghcr.io/${{ github.repository }}/client:latest
+    #     docker push ghcr.io/${{ github.repository }}/api:latest
+    #     docker push ghcr.io/${{ github.repository }}/client:latest

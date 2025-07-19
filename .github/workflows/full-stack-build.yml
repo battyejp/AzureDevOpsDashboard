@@ -1,0 +1,83 @@
+name: Full Stack Build
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'api/**'
+      - 'client/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'api/**'
+      - 'client/**'
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      api-changed: ${{ steps.changes.outputs.api }}
+      client-changed: ${{ steps.changes.outputs.client }}
+    steps:
+    - uses: actions/checkout@v4
+    - uses: dorny/paths-filter@v3
+      id: changes
+      with:
+        filters: |
+          api:
+            - 'api/**'
+          client:
+            - 'client/**'
+
+  integration-test:
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.api-changed == 'true' && needs.detect-changes.outputs.client-changed == 'true' }}
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: client/package-lock.json
+    
+    - name: Create test configuration
+      run: |
+        cp api/AzDevOpsApi/appsettings.Development.json.template api/AzDevOpsApi/appsettings.Development.json
+        sed -i 's/YOUR_ORGANIZATION_HERE/test-org/g' api/AzDevOpsApi/appsettings.Development.json
+        sed -i 's/YOUR_PERSONAL_ACCESS_TOKEN_HERE/test-token/g' api/AzDevOpsApi/appsettings.Development.json
+        
+        cp client/.env.template client/.env
+        sed -i 's/YOUR_ORGANIZATION_HERE/test-org/g' client/.env
+    
+    - name: Build API
+      working-directory: ./api
+      run: |
+        dotnet restore AzDevOpsDashboard.sln
+        dotnet build AzDevOpsDashboard.sln --no-restore --configuration Release
+    
+    - name: Build Client
+      working-directory: ./client
+      run: |
+        npm ci
+        npm run build
+      env:
+        REACT_APP_AZDEVOPS_ORGANIZATION: "test-org"
+        REACT_APP_API_URL: "http://localhost:5031"
+    
+    - name: Upload Integration Test Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: integration-build
+        path: |
+          api/AzDevOpsApi/bin/Release/
+          client/build/
+        retention-days: 3

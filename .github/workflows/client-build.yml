@@ -1,0 +1,75 @@
+name: Client Build and Test
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'client/**'
+      - '.github/workflows/client-build.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'client/**'
+      - '.github/workflows/client-build.yml'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: ./client
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: client/package-lock.json
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Lint code
+      run: npm run lint
+      continue-on-error: true
+    
+    - name: Run tests
+      run: npm test -- --coverage --watchAll=false
+      env:
+        CI: true
+    
+    - name: Build application
+      run: npm run build
+      env:
+        # Set any required environment variables for build
+        REACT_APP_AZDEVOPS_ORGANIZATION: "placeholder"
+        REACT_APP_API_URL: "placeholder"
+    
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: client-test-results
+        path: |
+          client/coverage/
+          client/test-results.xml
+        retention-days: 30
+    
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: client-build
+        path: client/build/
+        retention-days: 7
+    
+    - name: Check bundle size
+      run: |
+        echo "Build size information:"
+        du -sh build/
+        du -sh build/static/js/*.js | head -10
+        echo "Largest files:"
+        find build/ -type f -name "*.js" -o -name "*.css" | xargs ls -lah | sort -k5 -hr | head -10
