@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { Project, Pipeline, Build, DeploymentEnvironment, DeployedBuild } from '../models/types';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:5031' : '');
+const API_BASE_URL = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:5031/api' : '');
 
 // Create axios instance with default config
 const apiClient = axios.create({
@@ -15,7 +15,7 @@ const apiClient = axios.create({
 export class ApiService {
   static async getProjects(organization: string): Promise<Project[]> {
     try {
-      const response = await apiClient.get<Project[]>(`/api/projects`);
+      const response = await apiClient.get<Project[]>(`/projects`);
       return response.data;
     } catch (error) {
       console.error('Error fetching projects:', error);
@@ -25,7 +25,7 @@ export class ApiService {
 
   static async getPipelines(organization: string, project: string): Promise<Pipeline[]> {
     try {
-      const response = await apiClient.get<Pipeline[]>(`/api/pipelines?project=${encodeURIComponent(project)}`);
+      const response = await apiClient.get<Pipeline[]>(`/pipelines?project=${encodeURIComponent(project)}`);
       return response.data;
     } catch (error) {
       console.error('Error fetching pipelines:', error);
@@ -41,7 +41,7 @@ export class ApiService {
   ): Promise<Build[]> {
     try {
       const response = await apiClient.get<Build[]>(
-        `/api/builds/${pipelineId}?project=${encodeURIComponent(project)}&count=${count}`
+        `/builds/${pipelineId}?project=${encodeURIComponent(project)}&count=${count}`
       );
       return response.data;
     } catch (error) {
@@ -64,7 +64,7 @@ export class ApiService {
       // First, try the direct endpoint for the latest deployed build
       try {
         const response = await apiClient.get<any>(
-          `/api/deployedbuilds/${pipelineId}/${environmentName}?project=${encodeURIComponent(project)}`
+          `/deployedbuilds/${pipelineId}/${environmentName}?project=${encodeURIComponent(project)}`
         );
         
         console.log('Deployed builds API response:', response.data);
@@ -110,7 +110,7 @@ export class ApiService {
       
       try {
         const response = await apiClient.get<any>(
-          `/api/deployedbuilds/${pipelineId}/${environmentName}?project=${encodeURIComponent(project)}`
+          `/deployedbuilds/${pipelineId}/${environmentName}?project=${encodeURIComponent(project)}`
         );
         
         console.log('Raw API response for deployed build:', response.data);
