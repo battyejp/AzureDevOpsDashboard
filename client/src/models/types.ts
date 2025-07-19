@@ -41,6 +41,7 @@ export interface Build {
   startTime?: string;
   finishTime?: string;
   url: string;
+  tags: string[];
   definition: {
     id: number;
     name: string;
