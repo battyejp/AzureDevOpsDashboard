@@ -2,6 +2,7 @@ using AzDevOpsApi.Controllers;
 using AzDevOpsApi.Models.AzureDevOps;
 using AzDevOpsApi.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
@@ -14,6 +15,7 @@ namespace AzDevOpsApi.Tests.Controllers
     {
         private readonly IAzureDevOpsService _azureDevOpsService;
         private readonly ILogger<ProjectsController> _logger;
+        private readonly IConfiguration _configuration;
         private readonly ProjectsController _controller;
         
         private const string TestOrganization = "test-org";
@@ -23,12 +25,17 @@ namespace AzDevOpsApi.Tests.Controllers
         {
             _azureDevOpsService = Substitute.For<IAzureDevOpsService>();
             _logger = Substitute.For<ILogger<ProjectsController>>();
+            _configuration = Substitute.For<IConfiguration>();
             
-            _controller = new ProjectsController(_azureDevOpsService, _logger);
+            // Setup configuration defaults
+            _configuration["AzureDevOps:Organization"].Returns(TestOrganization);
+            _configuration["AzureDevOps:PAT"].Returns(TestPat);
+            
+            _controller = new ProjectsController(_azureDevOpsService, _logger, _configuration);
         }
 
         [Fact]
-        public async Task GetProjects_WithValidParameters_ReturnsOkWithProjects()
+        public async Task GetProjects_WithValidConfiguration_ReturnsOkWithProjects()
         {
             // Arrange
             var expectedProjects = new List<AzureDevOpsProject>
@@ -59,7 +66,7 @@ namespace AzDevOpsApi.Tests.Controllers
                 .Returns(expectedProjects);
             
             // Act
-            var result = await _controller.GetProjects(TestOrganization, TestPat);
+            var result = await _controller.GetProjects();
             
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -73,13 +80,18 @@ namespace AzDevOpsApi.Tests.Controllers
         [InlineData("", "valid-pat")]
         [InlineData("valid-org", "")]
         [InlineData("", "")]
-        public async Task GetProjects_WithMissingParameters_ReturnsBadRequest(string organization, string pat)
+        public async Task GetProjects_WithMissingConfiguration_ReturnsInternalServerError(string organization, string pat)
         {
+            // Arrange
+            _configuration["AzureDevOps:Organization"].Returns(organization);
+            _configuration["AzureDevOps:PAT"].Returns(pat);
+            
             // Act
-            var result = await _controller.GetProjects(organization, pat);
+            var result = await _controller.GetProjects();
             
             // Assert
-            Assert.IsType<BadRequestObjectResult>(result.Result);
+            var statusCodeResult = Assert.IsType<ObjectResult>(result.Result);
+            Assert.Equal(500, statusCodeResult.StatusCode);
         }
 
         [Fact]
@@ -91,7 +103,7 @@ namespace AzDevOpsApi.Tests.Controllers
                 .Throws(exception);
             
             // Act
-            var result = await _controller.GetProjects(TestOrganization, TestPat);
+            var result = await _controller.GetProjects();
             
             // Assert
             Assert.IsType<UnauthorizedObjectResult>(result.Result);
@@ -106,7 +118,7 @@ namespace AzDevOpsApi.Tests.Controllers
                 .Throws(exception);
             
             // Act
-            var result = await _controller.GetProjects(TestOrganization, TestPat);
+            var result = await _controller.GetProjects();
             
             // Assert
             Assert.IsType<NotFoundObjectResult>(result.Result);
@@ -120,7 +132,7 @@ namespace AzDevOpsApi.Tests.Controllers
                 .Throws(new Exception("Test exception"));
             
             // Act
-            var result = await _controller.GetProjects(TestOrganization, TestPat);
+            var result = await _controller.GetProjects();
             
             // Assert
             var statusCodeResult = Assert.IsType<ObjectResult>(result.Result);
