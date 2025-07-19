@@ -17,8 +17,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Chip,
-  Link
+  Chip
 } from '@mui/material';
 import { ApiService } from '../services/apiService';
 import { Project, Pipeline, Build } from '../models/types';
@@ -257,11 +256,10 @@ const BuildsView: React.FC = () => {
                   <TableCell>Build Number</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell>Result</TableCell>
+                  <TableCell>Branch</TableCell>
+                  <TableCell>Reason</TableCell>
+                  <TableCell>Build Time</TableCell>
                   <TableCell>Tags</TableCell>
-                  <TableCell>Start Time</TableCell>
-                  <TableCell>Finish Time</TableCell>
-                  <TableCell>Duration</TableCell>
-                  <TableCell>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -289,6 +287,21 @@ const BuildsView: React.FC = () => {
                       )}
                     </TableCell>
                     <TableCell>
+                      <Typography variant="body2">
+                        {build.sourceBranch ? build.sourceBranch.replace('refs/heads/', '') : 'N/A'}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">
+                        {build.reason || 'N/A'}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">
+                        {formatDuration(build.startTime, build.finishTime)}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                         {build.tags && build.tags.length > 0 ? (
                           build.tags.map((tag, index) => (
@@ -306,31 +319,6 @@ const BuildsView: React.FC = () => {
                           </Typography>
                         )}
                       </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2">
-                        {formatDate(build.startTime)}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2">
-                        {formatDate(build.finishTime)}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2">
-                        {formatDuration(build.startTime, build.finishTime)}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Link 
-                        href={build.url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        variant="body2"
-                      >
-                        View in Azure DevOps
-                      </Link>
                     </TableCell>
                   </TableRow>
                 ))}

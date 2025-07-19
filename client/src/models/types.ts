@@ -41,6 +41,8 @@ export interface Build {
   startTime?: string;
   finishTime?: string;
   url: string;
+  sourceBranch: string;
+  reason: string;
   tags: string[];
   definition: {
     id: number;
