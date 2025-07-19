@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import App from './App';
+import { appConfig } from './config/appConfig';
 
 test('renders Azure DevOps Dashboard title', () => {
   render(<App />);
@@ -17,7 +18,7 @@ test('renders filters section', () => {
 test('renders organization select field', () => {
   render(<App />);
   // Look for the organization value since the label has duplicates
-  const orgValue = screen.getByText('IPF-International-Limited');
+  const orgValue = screen.getByText(appConfig.azureDevOpsOrganization);
   expect(orgValue).toBeInTheDocument();
 });
 
