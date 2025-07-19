@@ -2,8 +2,28 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import App from './App';
 
-test('renders learn react link', () => {
+test('renders Azure DevOps Dashboard title', () => {
   render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+  const titleElement = screen.getByText(/Azure DevOps Dashboard/i);
+  expect(titleElement).toBeInTheDocument();
+});
+
+test('renders filters section', () => {
+  render(<App />);
+  const filtersElement = screen.getByText(/Filters/i);
+  expect(filtersElement).toBeInTheDocument();
+});
+
+test('renders organization select field', () => {
+  render(<App />);
+  // Look for the organization value since the label has duplicates
+  const orgValue = screen.getByText('IPF-International-Limited');
+  expect(orgValue).toBeInTheDocument();
+});
+
+test('renders environment select field', () => {
+  render(<App />);
+  // Look for the environment value 
+  const envValue = screen.getByText('Development');
+  expect(envValue).toBeInTheDocument();
 });

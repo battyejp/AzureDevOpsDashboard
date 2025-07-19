@@ -26,19 +26,12 @@ This repository includes several CI/CD workflows to ensure code quality and buil
 - Validates image sizes
 - Optional: Push to container registry (commented out)
 
-### 4. Full Stack Build (`full-stack-build.yml`)
-**Triggers**: Changes to both `api/**` and `client/**`
-- Detects which components changed
-- Runs integration tests when both API and client are modified
-- Creates combined build artifacts
-
 ## Path-Based Triggering
 
 Each workflow is configured to only run when relevant files change:
 
 - **API changes**: `api/**` → Triggers API build
 - **Client changes**: `client/**` → Triggers client build  
-- **Both changes**: → Triggers all relevant workflows
 - **Docker changes**: `docker-compose.yml`, `Dockerfile` → Triggers Docker build
 
 ## Artifacts
@@ -52,9 +45,6 @@ Workflows generate the following artifacts:
 ### Client Artifacts  
 - `client-test-results`: Test results and coverage
 - `client-build`: Production React build
-
-### Integration Artifacts
-- `integration-build`: Combined API and client builds
 
 ## Configuration
 
@@ -92,7 +82,7 @@ npm run build
 ```bash
 docker build -t azdevops-api:latest ./api
 docker build -t azdevops-client:latest ./client
-docker-compose config
+docker compose config
 ```
 
 ## Customization

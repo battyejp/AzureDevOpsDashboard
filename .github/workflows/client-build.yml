@@ -33,14 +33,20 @@ jobs:
     - name: Install dependencies
       run: npm ci
     
+    - name: Create .env file for tests
+      run: |
+        echo "REACT_APP_AZDEVOPS_ORGANIZATION=test-org" > .env
+        echo "REACT_APP_API_URL=http://localhost:5031" >> .env
+    
     - name: Lint code
       run: npm run lint
       continue-on-error: true
     
     - name: Run tests
-      run: npm test -- --coverage --watchAll=false
+      run: npm test -- --coverage --watchAll=false --testPathIgnorePatterns=/node_modules/ --transformIgnorePatterns="node_modules/(?!(axios)/)"
       env:
         CI: true
+        NODE_OPTIONS: --experimental-vm-modules
     
     - name: Build application
       run: npm run build
