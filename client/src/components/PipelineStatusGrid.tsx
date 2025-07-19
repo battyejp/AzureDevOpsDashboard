@@ -9,12 +9,9 @@ import {
 } from '@mui/material';
 import {
   CheckCircle,
-  Error,
-  Cancel,
-  Schedule,
   Build as BuildIcon
 } from '@mui/icons-material';
-import { PipelineStatus, BuildResult, BuildStatus } from '../models/types';
+import { PipelineStatus } from '../models/types';
 import { appConfig } from '../config/appConfig';
 
 interface PipelineStatusGridProps {
