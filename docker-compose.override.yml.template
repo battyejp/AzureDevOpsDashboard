@@ -5,8 +5,8 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:80
-      - AzureDevOps__Organization=
-      - AzureDevOps__PAT=
+      - AzureDevOps__Organization=YOUR_ORGANIZATION_HERE
+      - AzureDevOps__PAT=YOUR_PERSONAL_ACCESS_TOKEN_HERE
     volumes:
       - ./api/AzDevOpsApi:/app
     

@@ -59,15 +59,41 @@ The API provides the following endpoints:
 
 ## Configuration
 
+### Development Setup
+
+1. **Copy the template configuration file:**
+   ```bash
+   cp appsettings.Development.json.template appsettings.Development.json
+   ```
+
+2. **Update the development configuration** with your Azure DevOps details:
+   ```json
+   {
+     "AzureDevOps": {
+       "Organization": "your-organization-name",
+       "PAT": "your-personal-access-token"
+     }
+   }
+   ```
+
+   ⚠️ **Security Note**: The `appsettings.Development.json` file is ignored by git to prevent accidental commit of sensitive information.
+
+### Production Configuration
+
+For production deployments, use environment variables instead of configuration files:
+
+- `AZDEVOPS_ORGANIZATION`: Your Azure DevOps organization name
+- `AZDEVOPS_PAT`: Your Azure DevOps Personal Access Token
+
 ### appsettings.json
 
-The API is configured using `appsettings.json` and environment-specific overrides in `appsettings.Development.json`:
+The base configuration in `appsettings.json` uses placeholders that get replaced by environment variables:
 
 ```json
 {
   "AzureDevOps": {
-    "Organization": "your-organization-name",
-    "PAT": "your-personal-access-token"
+    "Organization": "#{AZDEVOPS_ORGANIZATION}#",
+    "PAT": "#{AZDEVOPS_PAT}#"
   },
   "Logging": {
     "LogLevel": {

@@ -63,11 +63,22 @@ AzDevOpsDashboard/
 │   ├── README.md                 # Client Documentation
 │   ├── Dockerfile                # Client Docker config
 │   └── package.json              # NPM Dependencies
-├── docker-compose.yml            # Docker Compose config
-├── docker-compose.override.yml   # Development overrides
+├── docker-compose.yml              # Docker Compose config
+├── docker-compose.override.yml.template # Development overrides template
 ├── start-dev.ps1                 # Development startup script
 ├── stop-dev.ps1                  # Development cleanup script
 └── status-check.ps1              # Health monitoring script
+```
+
+### Configuration Templates
+
+🔒 **Security Feature**: This project uses template files to protect sensitive configuration from being committed to git:
+
+- `api/AzDevOpsApi/appsettings.Development.json.template` → Copy to `appsettings.Development.json`
+- `docker-compose.override.yml.template` → Copy to `docker-compose.override.yml` 
+- `client/.env.template` → Copy to `client/.env`
+
+The actual configuration files (without `.template`) are automatically ignored by git and contain your sensitive Azure DevOps credentials.
 ```
 
 ### Component Documentation
@@ -140,20 +151,38 @@ AzDevOpsDashboard/
 1. **Clone the repository**
    ```powershell
    git clone <repository-url>
-   cd AzDevOpsDashboard
+   cd AzureDevOpsDashboard
    ```
 
-2. **Configure Azure DevOps credentials**
+2. **Configure your development environment**
    
-   Update `api/AzDevOpsApi/appsettings.Development.json`:
-   ```json
-   {
-     "AzureDevOps": {
-       "Organization": "your-organization-name",
-       "PAT": "your-personal-access-token"
-     }
-   }
+   **🔒 Important**: This project uses template files to keep sensitive configuration out of git.
+   
+   a. **Copy and configure API settings:**
+   ```powershell
+   # Copy the template file
+   Copy-Item "api\AzDevOpsApi\appsettings.Development.json.template" "api\AzDevOpsApi\appsettings.Development.json"
    ```
+   
+   Then edit `api/AzDevOpsApi/appsettings.Development.json` and replace:
+   - `YOUR_ORGANIZATION_HERE` with your Azure DevOps organization name
+   - `YOUR_PERSONAL_ACCESS_TOKEN_HERE` with your Azure DevOps Personal Access Token
+   
+   b. **Copy and configure Docker settings:**
+   ```powershell
+   # Copy the template file  
+   Copy-Item "docker-compose.override.yml.template" "docker-compose.override.yml"
+   ```
+   
+   Then edit `docker-compose.override.yml` and replace the placeholder values with your actual credentials.
+   
+   c. **Copy and configure client environment:**
+   ```powershell
+   # Copy the template file
+   Copy-Item "client\.env.template" "client\.env"
+   ```
+   
+   Then edit `client/.env` and replace `YOUR_ORGANIZATION_HERE` with your actual organization name.
 
 3. **Start the development environment**
    ```powershell
@@ -167,16 +196,20 @@ AzDevOpsDashboard/
    - API: http://localhost:5031
    - API Documentation: http://localhost:5031/swagger
 
+### Security Notes
+
+⚠️ **Important**: The following files contain sensitive data and are excluded from git:
+- `api/AzDevOpsApi/appsettings.Development.json`
+- `docker-compose.override.yml`
+- `client/.env`
+
+These files will never be committed to the repository, protecting your Azure DevOps credentials.
+
 ### Docker Deployment
 
-1. **Configure environment variables**
-
-   Update `docker-compose.yml` with your Azure DevOps credentials:
-   ```yaml
-   environment:
-     - AzureDevOps__Organization=your-organization
-     - AzureDevOps__PAT=your-personal-access-token
-   ```
+1. **Set up configuration files**
+   
+   Follow step 2 from "Getting Started" above to create your configuration files from templates.
 
 2. **Build and run the containers**
    ```powershell
