@@ -118,36 +118,6 @@ const BuildsView: React.FC = () => {
     setSelectedPipeline(Number(event.target.value) || '');
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'completed':
-        return 'success';
-      case 'inprogress':
-        return 'primary';
-      case 'notstarted':
-        return 'default';
-      case 'cancelling':
-        return 'warning';
-      default:
-        return 'default';
-    }
-  };
-
-  const getResultColor = (result?: string) => {
-    switch (result?.toLowerCase()) {
-      case 'succeeded':
-        return 'success';
-      case 'failed':
-        return 'error';
-      case 'partiallysucceeded':
-        return 'warning';
-      case 'canceled':
-        return 'default';
-      default:
-        return 'default';
-    }
-  };
-
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleString();
@@ -254,8 +224,6 @@ const BuildsView: React.FC = () => {
               <TableHead>
                 <TableRow>
                   <TableCell>Build Number</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Result</TableCell>
                   <TableCell>Branch</TableCell>
                   <TableCell>Reason</TableCell>
                   <TableCell>Build Time</TableCell>
@@ -269,22 +237,6 @@ const BuildsView: React.FC = () => {
                       <Typography variant="body2" fontWeight="medium">
                         {build.buildNumber}
                       </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Chip 
-                        label={build.status} 
-                        color={getStatusColor(build.status)} 
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      {build.result && (
-                        <Chip 
-                          label={build.result} 
-                          color={getResultColor(build.result)} 
-                          size="small"
-                        />
-                      )}
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2">

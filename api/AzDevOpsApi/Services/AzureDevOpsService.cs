@@ -88,7 +88,7 @@ namespace AzDevOpsApi.Services
         {
             try
             {
-                var url = $"{_baseUrl.TrimEnd('/')}/{organization}/{project}/_apis/build/builds?definitions={pipelineId}&$top={count}&api-version=7.0";
+                var url = $"{_baseUrl.TrimEnd('/')}/{organization}/{project}/_apis/build/builds?definitions={pipelineId}&$top={count}&statusFilter=all&queryOrder=startTimeDescending&api-version=7.1";
                 var response = await GetAsync<AzureDevOpsBuildsResponse>(url, pat);
                 
                 return response.Value;
