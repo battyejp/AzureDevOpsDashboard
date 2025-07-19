@@ -1,0 +1,17 @@
+services:
+  api:
+    ports:
+      - "5031:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:80
+      - AzureDevOps__Organization=
+      - AzureDevOps__PAT=
+    volumes:
+      - ./api/AzDevOpsApi:/app
+    
+  client:
+    ports:
+      - "3000:80"
+    environment:
+      - REACT_APP_API_URL=http://localhost:5031
