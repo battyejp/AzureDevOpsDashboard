@@ -226,6 +226,7 @@ const BuildsView: React.FC = () => {
                   <TableCell>Build Number</TableCell>
                   <TableCell>Branch</TableCell>
                   <TableCell>Reason</TableCell>
+                  <TableCell>Start Time</TableCell>
                   <TableCell>Build Time</TableCell>
                   <TableCell>Tags</TableCell>
                 </TableRow>
@@ -246,6 +247,11 @@ const BuildsView: React.FC = () => {
                     <TableCell>
                       <Typography variant="body2">
                         {build.reason || 'N/A'}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">
+                        {formatDate(build.startTime)}
                       </Typography>
                     </TableCell>
                     <TableCell>
