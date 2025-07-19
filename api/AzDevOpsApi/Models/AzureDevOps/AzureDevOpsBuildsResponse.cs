@@ -16,5 +16,6 @@ namespace AzDevOpsApi.Models.AzureDevOps
         public string Url { get; set; } = string.Empty;
         public string SourceBranch { get; set; } = string.Empty;
         public string SourceVersion { get; set; } = string.Empty;
+        public string[] Tags { get; set; } = Array.Empty<string>();
     }
 }

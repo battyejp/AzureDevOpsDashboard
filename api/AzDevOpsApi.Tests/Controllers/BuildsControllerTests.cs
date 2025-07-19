@@ -51,7 +51,8 @@ namespace AzDevOpsApi.Tests.Controllers
                     FinishTime = DateTime.UtcNow.AddHours(-1),
                     SourceBranch = "refs/heads/main",
                     SourceVersion = "abc123",
-                    Url = "https://dev.azure.com/test-org/TestProject/_build/results?buildId=1"
+                    Url = "https://dev.azure.com/test-org/TestProject/_build/results?buildId=1",
+                    Tags = new[] { "production", "release" }
                 },
                 new AzureDevOpsBuild 
                 { 
@@ -63,7 +64,8 @@ namespace AzDevOpsApi.Tests.Controllers
                     FinishTime = null,
                     SourceBranch = "refs/heads/feature/test",
                     SourceVersion = "def456",
-                    Url = "https://dev.azure.com/test-org/TestProject/_build/results?buildId=2"
+                    Url = "https://dev.azure.com/test-org/TestProject/_build/results?buildId=2",
+                    Tags = new[] { "development" }
                 }
             };
 
@@ -77,9 +79,21 @@ namespace AzDevOpsApi.Tests.Controllers
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
             var actualBuilds = Assert.IsAssignableFrom<IEnumerable<AzureDevOpsBuild>>(okResult.Value);
-            Assert.Equal(expectedBuilds.Count(), actualBuilds.Count());
-            Assert.Equal(expectedBuilds.First().Id, actualBuilds.First().Id);
-            Assert.Equal(expectedBuilds.First().BuildNumber, actualBuilds.First().BuildNumber);
+            var buildsList = actualBuilds.ToList();
+            
+            Assert.Equal(expectedBuilds.Count(), buildsList.Count());
+            Assert.Equal(expectedBuilds.First().Id, buildsList.First().Id);
+            Assert.Equal(expectedBuilds.First().BuildNumber, buildsList.First().BuildNumber);
+            
+            // Verify tags are properly returned
+            Assert.Equal(expectedBuilds.First().Tags, buildsList.First().Tags);
+            Assert.Equal(2, buildsList.First().Tags.Length);
+            Assert.Contains("production", buildsList.First().Tags);
+            Assert.Contains("release", buildsList.First().Tags);
+            
+            Assert.Equal(expectedBuilds.Last().Tags, buildsList.Last().Tags);
+            Assert.Single(buildsList.Last().Tags);
+            Assert.Contains("development", buildsList.Last().Tags);
         }
 
         [Fact]
