@@ -84,11 +84,11 @@ namespace AzDevOpsApi.Services
             }
         }
 
-        public async Task<IEnumerable<AzureDevOpsBuild>> GetBuildsAsync(string project, string organization, string pat, int pipelineId, int count)
+        public async Task<IEnumerable<AzureDevOpsBuild>> GetBuildsAsync(string project, string organization, string pat, int pipelineId, int count, string statusFilter = "all")
         {
             try
             {
-                var url = $"{_baseUrl.TrimEnd('/')}/{organization}/{project}/_apis/build/builds?definitions={pipelineId}&$top={count}&statusFilter=all&queryOrder=startTimeDescending&api-version=7.1";
+                var url = $"{_baseUrl.TrimEnd('/')}/{organization}/{project}/_apis/build/builds?definitions={pipelineId}&$top={count}&statusFilter={statusFilter}&queryOrder=startTimeDescending&api-version=7.1";
                 var response = await GetAsync<AzureDevOpsBuildsResponse>(url, pat);
                 
                 return response.Value;

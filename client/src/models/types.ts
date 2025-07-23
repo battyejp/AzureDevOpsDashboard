@@ -88,3 +88,20 @@ export interface DashboardFilters {
   project: string;
   environment: DeploymentEnvironment;
 }
+
+export interface TimelineRecord {
+  id: string;
+  parentId?: string;
+  name: string;
+  type: string;
+  state: string;
+  result?: string;
+  startTime?: string;
+  finishTime?: string;
+  percentComplete?: number;
+}
+
+export interface BuildTimeline {
+  id: string;
+  records: TimelineRecord[];
+}

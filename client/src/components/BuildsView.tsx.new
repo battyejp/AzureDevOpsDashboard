@@ -17,7 +17,8 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Chip
+  Chip,
+  Tooltip
 } from '@mui/material';
 import { ApiService } from '../services/apiService';
 import { Project, Pipeline, Build, BuildTimeline, TimelineRecord } from '../models/types';
@@ -132,15 +133,6 @@ const BuildsView: React.FC = () => {
             
             if (timeline) {
               console.log(`Got timeline for build ${build.id}:`, timeline);
-              console.log(`Timeline records for build ${build.id}:`, timeline.records?.map(r => ({
-                name: r.name,
-                type: r.type,
-                state: r.state,
-                result: r.result,
-                startTime: r.startTime,
-                finishTime: r.finishTime,
-                parentId: r.parentId
-              })));
               timelinesMap.set(build.id, timeline);
             } else {
               console.log(`No timeline data for build ${build.id}`);
@@ -183,12 +175,9 @@ const BuildsView: React.FC = () => {
           }
           const apiTestData = await apiTestResponse.json();
           console.log('API connectivity verified:', apiTestData);
-        } catch (apiTestErr: unknown) {
+        } catch (apiTestErr) {
           console.error('Pre-request API test failed:', apiTestErr);
-          const errorMessage = apiTestErr instanceof Error 
-            ? apiTestErr.message 
-            : 'Unknown error during API connectivity test';
-          setError(`API connectivity test failed: ${errorMessage}`);
+          setError(`API connectivity test failed: ${apiTestErr.message}`);
           setLoading(false);
           return;
         }
@@ -251,29 +240,23 @@ const BuildsView: React.FC = () => {
   const getLastStage = (records?: TimelineRecord[]) => {
     if (!records || records.length === 0) return null;
     
-    // Filter to only include stage records that are not skipped
+    // Filter to only include stage records (not tasks)
     const stages = records.filter(record => 
-      record.type === 'Stage' && 
-      record.result !== 'skipped' &&
-      record.result !== 'canceled' &&
-      (record.parentId === undefined || record.parentId === '')
-    );
+      record.type === 'Stage' || record.parentId === undefined || record.parentId === '');
     
     if (stages.length === 0) return null;
     
-    // Sort by start time to get the chronologically last stage that actually started
+    // Sort by finish time (desc) to get the most recent stage first
     return [...stages].sort((a, b) => {
-      // If both have start times, sort by start time (descending to get latest first)
-      if (a.startTime && b.startTime) {
+      if (!a.finishTime && !b.finishTime) {
+        // If both are running, sort by start time
+        if (!a.startTime) return 1;
+        if (!b.startTime) return -1;
         return new Date(b.startTime).getTime() - new Date(a.startTime).getTime();
       }
-      
-      // If only one has a start time, prioritize the one that started
-      if (a.startTime && !b.startTime) return -1;
-      if (!a.startTime && b.startTime) return 1;
-      
-      // If neither has start time, sort by name as fallback
-      return a.name.localeCompare(b.name);
+      if (!a.finishTime) return -1; // Running stages come first
+      if (!b.finishTime) return 1;
+      return new Date(b.finishTime).getTime() - new Date(a.finishTime).getTime();
     })[0];
   };
   
@@ -283,28 +266,18 @@ const BuildsView: React.FC = () => {
       return null;
     }
     
-    console.log(`Stage status for ${stage.name}:`, {
-      state: stage.state,
-      result: stage.result,
-      startTime: stage.startTime,
-      finishTime: stage.finishTime
-    });
-    
-    // Check state first for in-progress stages
     if (stage.state === 'inProgress') {
       return <img src="/icons/inprogress.svg" alt="In Progress" width="20" height="20" />;
     }
     
-    // Then check result for completed stages
     if (stage.result === 'succeeded') {
       return <img src="/icons/success.svg" alt="Success" width="20" height="20" />;
     }
     
-    if (stage.result === 'failed' || stage.result === 'partiallySucceeded') {
+    if (stage.result === 'failed') {
       return <img src="/icons/failure.svg" alt="Failed" width="20" height="20" />;
     }
     
-    // For other states, show a neutral indicator or nothing
     return null;
   };
 
@@ -385,7 +358,7 @@ const BuildsView: React.FC = () => {
       )}
 
       {/* Builds Table */}
-      {builds.length > 0 && (
+      {builds.length > 0 ? (
         <Paper sx={{ p: 3 }}>
           <Typography variant="h6" gutterBottom>
             Recent Builds ({builds.length})
@@ -479,15 +452,14 @@ const BuildsView: React.FC = () => {
             </Table>
           </TableContainer>
         </Paper>
-      )}
-
-      {/* No builds message */}
-      {!loading && builds.length === 0 && selectedProject && selectedPipeline && (
-        <Paper sx={{ p: 3 }}>
-          <Typography color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
-            No builds found for the selected pipeline.
-          </Typography>
-        </Paper>
+      ) : (
+        !loading && selectedProject && selectedPipeline && (
+          <Paper sx={{ p: 3 }}>
+            <Typography color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
+              No builds found for the selected pipeline.
+            </Typography>
+          </Paper>
+        )
       )}
     </Container>
   );
