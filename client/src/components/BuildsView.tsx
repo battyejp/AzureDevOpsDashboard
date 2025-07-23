@@ -34,6 +34,28 @@ const BuildsView: React.FC = () => {
   const [timelineLoading, setTimelineLoading] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+  // New: branch and reason filter state
+  const [branchFilter, setBranchFilter] = useState<string>('main');
+  const [reasonFilter, setReasonFilter] = useState<string>('individualCI');
+
+  // Reason options (can be extended as needed)
+  // Azure DevOps BuildReason enum values
+  // https://learn.microsoft.com/en-us/dotnet/api/microsoft.teamfoundation.build.webapi.buildreason
+  const reasonOptions = [
+    { value: 2, label: 'CI' }, // IndividualCI
+    { value: 1, label: 'Manual' },
+    { value: 8, label: 'Scheduled' },
+    { value: 256, label: 'Pull Request' },
+    { value: 4, label: 'Batched CI' },
+    { value: '', label: 'All' },
+  ];
+
+  // Helper to get correct branch value for API
+  const getApiBranch = (branch: string) => {
+    if (!branch) return '';
+    if (branch.startsWith('refs/')) return branch;
+    return `refs/heads/${branch}`;
+  };
 
   // Add a test function to directly check API connectivity
   const testApiConnectivity = async () => {
@@ -158,8 +180,8 @@ const BuildsView: React.FC = () => {
       try {
         setLoading(true);
         setError(''); // Clear previous errors
-        console.log(`Loading builds for pipeline ${selectedPipeline} in project ${selectedProject}`);
-        
+        console.log(`Loading builds for pipeline ${selectedPipeline} in project ${selectedProject} with branch ${branchFilter} and reason ${reasonFilter}`);
+
         // Add extra logging for API connectivity
         try {
           const apiTestResponse = await fetch('http://localhost:5031/api/projects');
@@ -177,21 +199,24 @@ const BuildsView: React.FC = () => {
           setLoading(false);
           return;
         }
-        
+
+        // Call API with branch and reason filter
         const buildData = await ApiService.getBuilds(
-          organization, 
-          selectedProject, 
-          Number(selectedPipeline), 
+          organization,
+          selectedProject,
+          Number(selectedPipeline),
           20, // Get more builds for the table view
-          'all' // Include in-progress builds
+          'all', // Include in-progress builds
+          getApiBranch(branchFilter),
+          reasonFilter === '' ? undefined : reasonFilter
         );
-        
+
         console.log(`Loaded ${buildData ? buildData.length : 0} builds:`, buildData);
-        
+
         if (!buildData || buildData.length === 0) {
           console.warn('No builds returned from API');
         }
-        
+
         setBuilds(buildData || []);
         // Clear previous timelines when builds change
         setBuildTimelines(new Map());
@@ -207,7 +232,7 @@ const BuildsView: React.FC = () => {
     };
 
     loadBuilds();
-  }, [organization, selectedProject, selectedPipeline]);
+  }, [organization, selectedProject, selectedPipeline, branchFilter, reasonFilter]);
 
   // Auto-load timelines for all builds when builds change
   useEffect(() => {
@@ -321,7 +346,7 @@ const BuildsView: React.FC = () => {
           display: 'grid',
           gridTemplateColumns: {
             xs: '1fr',
-            md: 'repeat(2, 1fr)'
+            md: 'repeat(4, 1fr)'
           },
           gap: 3
         }}>
@@ -350,6 +375,33 @@ const BuildsView: React.FC = () => {
                 <MenuItem key={pipeline.id} value={pipeline.id}>
                   {pipeline.name}
                 </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          {/* Branch Filter */}
+          <FormControl fullWidth disabled={loading}>
+            <InputLabel>Branch</InputLabel>
+            <Select
+              value={branchFilter}
+              label="Branch"
+              onChange={(e) => setBranchFilter(e.target.value)}
+            >
+              <MenuItem value="main">main</MenuItem>
+              <MenuItem value="develop">develop</MenuItem>
+              <MenuItem value="release">release</MenuItem>
+              <MenuItem value="">All</MenuItem>
+            </Select>
+          </FormControl>
+          {/* Reason Filter */}
+          <FormControl fullWidth disabled={loading}>
+            <InputLabel>Reason</InputLabel>
+            <Select
+              value={reasonFilter}
+              label="Reason"
+              onChange={(e) => setReasonFilter(e.target.value)}
+            >
+              {reasonOptions.map((option) => (
+                <MenuItem key={option.value} value={option.value.toString()}>{option.label}</MenuItem>
               ))}
             </Select>
           </FormControl>

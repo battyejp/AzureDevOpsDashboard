@@ -24,7 +24,13 @@ namespace AzDevOpsApi.Controllers
         }
 
         [HttpGet("{pipelineId}")]
-        public async Task<ActionResult<IEnumerable<BuildDto>>> GetBuilds(int pipelineId, string project, int count = 10, string statusFilter = "all")
+        public async Task<ActionResult<IEnumerable<BuildDto>>> GetBuilds(
+            int pipelineId,
+            string project,
+            int count = 10,
+            string statusFilter = "all",
+            string? branch = null,
+            string? reasonFilter = null)
         {
             if (string.IsNullOrEmpty(project))
             {
@@ -47,7 +53,7 @@ namespace AzDevOpsApi.Controllers
                     return StatusCode(500, "Azure DevOps configuration is missing");
                 }
 
-                var builds = await _azureDevOpsService.GetBuildsAsync(project, organization, pat, pipelineId, count, statusFilter);
+                var builds = await _azureDevOpsService.GetBuildsAsync(project, organization, pat, pipelineId, count, statusFilter, branch, reasonFilter);
                 
                 // Map to DTO with formatted reason
                 var buildDtos = builds.Select(build => new BuildDto

@@ -44,37 +44,45 @@ export class ApiService {
     project: string,
     pipelineId: number,
     count: number = 5,
-    statusFilter: string = ''
+    statusFilter: string = '',
+    branch?: string,
+    reasonFilter?: string
   ): Promise<Build[]> {
     try {
       let url = `/builds/${pipelineId}?project=${encodeURIComponent(project)}&count=${count}`;
       if (statusFilter) {
         url += `&statusFilter=${statusFilter}`;
       }
-      
+      if (branch !== undefined && branch !== '') {
+        url += `&branch=${encodeURIComponent(branch)}`;
+      }
+      if (reasonFilter !== undefined && reasonFilter !== '') {
+        url += `&reasonFilter=${encodeURIComponent(reasonFilter)}`;
+      }
+
       console.log(`API call to ${url}`);
-      
+
       // Add request timeout for debugging
       const response = await apiClient.get<Build[]>(url, { 
         timeout: 10000,  // 10 second timeout for debugging
         headers: { 'Cache-Control': 'no-cache' } // Prevent caching
       });
-      
+
       if (!response || !response.data) {
         console.error('API response is empty or invalid');
         return [];
       }
-      
+
       console.log(`Build API response:`, response.data);
       console.log(`Build API response length:`, response.data.length);
-      
+
       // Additional validation of the response data
       if (Array.isArray(response.data)) {
         console.log('Response is an array as expected');
       } else {
         console.error('Response is not an array:', typeof response.data);
       }
-      
+
       return response.data;
     } catch (error: any) {
       console.error('Error fetching builds:', error);
