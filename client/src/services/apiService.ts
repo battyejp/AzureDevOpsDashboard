@@ -207,10 +207,21 @@ export class ApiService {
   static async getBuildTimeline(
     organization: string,
     project: string,
-    buildId: number
+    buildId: number,
+    type?: string,
+    state?: string
   ): Promise<BuildTimeline | null> {
     try {
-      const url = `/buildtimeline/${buildId}?project=${encodeURIComponent(project)}`;
+      let url = `/buildtimeline/${buildId}?project=${encodeURIComponent(project)}`;
+      
+      if (type) {
+        url += `&type=${encodeURIComponent(type)}`;
+      }
+      
+      if (state) {
+        url += `&state=${encodeURIComponent(state)}`;
+      }
+      
       console.log(`API call to get timeline: ${url}`);
       const response = await apiClient.get<BuildTimeline>(url);
       console.log(`Timeline API response for build ${buildId}:`, response.data);

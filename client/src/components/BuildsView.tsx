@@ -31,7 +31,7 @@ const BuildsView: React.FC = () => {
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
   const [builds, setBuilds] = useState<Build[]>([]);
   const [buildTimelines, setBuildTimelines] = useState<Map<number, BuildTimeline>>(new Map());
-  const [timelineLoading, setTimelineLoading] = useState<boolean>(false);
+  const [timelineLoading, setTimelineLoading] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
 
@@ -111,56 +111,41 @@ const BuildsView: React.FC = () => {
     loadPipelines();
   }, [organization, selectedProject]);
 
-  // Load timelines for each build
-  useEffect(() => {
-    const loadBuildTimelines = async () => {
-      if (builds.length === 0) return;
+  // Load timeline for a specific build
+  const loadBuildTimeline = async (build: Build) => {
+    if (buildTimelines.has(build.id) || timelineLoading.has(build.id)) {
+      return; // Already loaded or loading
+    }
+    
+    try {
+      // Add to loading set
+      setTimelineLoading(prev => new Set(prev).add(build.id));
       
-      try {
-        setTimelineLoading(true);
-        console.log(`Loading timelines for ${builds.length} builds`);
-        const timelinesMap = new Map<number, BuildTimeline>();
-        
-        for (const build of builds) {
-          try {
-            console.log(`Loading timeline for build ${build.id}`);
-            const timeline = await ApiService.getBuildTimeline(
-              organization,
-              selectedProject,
-              build.id
-            );
-            
-            if (timeline) {
-              console.log(`Got timeline for build ${build.id}:`, timeline);
-              console.log(`Timeline records for build ${build.id}:`, timeline.records?.map(r => ({
-                name: r.name,
-                type: r.type,
-                state: r.state,
-                result: r.result,
-                startTime: r.startTime,
-                finishTime: r.finishTime,
-                parentId: r.parentId
-              })));
-              timelinesMap.set(build.id, timeline);
-            } else {
-              console.log(`No timeline data for build ${build.id}`);
-            }
-          } catch (err) {
-            console.error(`Error loading timeline for build ${build.id}:`, err);
-          }
-        }
-        
-        console.log(`Setting ${timelinesMap.size} timelines`);
-        setBuildTimelines(timelinesMap);
-      } catch (err) {
-        console.error('Error loading build timelines:', err);
-      } finally {
-        setTimelineLoading(false);
+      console.log(`Loading timeline for build ${build.id}`);
+      const timeline = await ApiService.getBuildTimeline(
+        organization,
+        selectedProject,
+        build.id,
+        'Stage' // Only fetch Stage records, we'll filter out skipped ones in the frontend
+      );
+      
+      if (timeline) {
+        console.log(`Got timeline for build ${build.id}:`, timeline);
+        setBuildTimelines(prev => new Map(prev).set(build.id, timeline));
+      } else {
+        console.log(`No timeline data for build ${build.id}`);
       }
-    };
-
-    loadBuildTimelines();
-  }, [builds, organization, selectedProject]);
+    } catch (err) {
+      console.error(`Error loading timeline for build ${build.id}:`, err);
+    } finally {
+      // Remove from loading set
+      setTimelineLoading(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(build.id);
+        return newSet;
+      });
+    }
+  };
 
   // Load builds when pipeline changes
   useEffect(() => {
@@ -208,6 +193,9 @@ const BuildsView: React.FC = () => {
         }
         
         setBuilds(buildData || []);
+        // Clear previous timelines when builds change
+        setBuildTimelines(new Map());
+        setTimelineLoading(new Set());
       } catch (err: any) {
         const errorMessage = err?.message || 'Unknown error';
         setError(`Failed to load builds: ${errorMessage}`);
@@ -220,6 +208,17 @@ const BuildsView: React.FC = () => {
 
     loadBuilds();
   }, [organization, selectedProject, selectedPipeline]);
+
+  // Auto-load timelines for all builds when builds change
+  useEffect(() => {
+    if (builds.length > 0) {
+      // Auto-load timelines for all builds
+      builds.forEach((build: Build, index: number) => {
+        // Stagger the requests to avoid overwhelming the API
+        setTimeout(() => loadBuildTimeline(build), index * 200);
+      });
+    }
+  }, [builds, loadBuildTimeline]);
 
   const handleProjectChange = (event: SelectChangeEvent<string>) => {
     setSelectedProject(event.target.value);
@@ -247,22 +246,19 @@ const BuildsView: React.FC = () => {
     return `${minutes}m ${seconds}s`;
   };
   
-  // Find the last stage in a timeline
+  // Get the last (most recent) stage from the timeline, ignoring skipped stages
   const getLastStage = (records?: TimelineRecord[]) => {
     if (!records || records.length === 0) return null;
     
-    // Filter to only include stage records that are not skipped
-    const stages = records.filter(record => 
-      record.type === 'Stage' && 
-      record.result !== 'skipped' &&
-      record.result !== 'canceled' &&
-      (record.parentId === undefined || record.parentId === '')
+    // Filter out skipped stages
+    const nonSkippedStages = records.filter(record => 
+      record.result !== 'skipped' && record.result !== 'canceled'
     );
     
-    if (stages.length === 0) return null;
+    if (nonSkippedStages.length === 0) return null;
     
     // Sort by start time to get the chronologically last stage that actually started
-    return [...stages].sort((a, b) => {
+    const sortedStages = [...nonSkippedStages].sort((a, b) => {
       // If both have start times, sort by start time (descending to get latest first)
       if (a.startTime && b.startTime) {
         return new Date(b.startTime).getTime() - new Date(a.startTime).getTime();
@@ -272,9 +268,11 @@ const BuildsView: React.FC = () => {
       if (a.startTime && !b.startTime) return -1;
       if (!a.startTime && b.startTime) return 1;
       
-      // If neither has start time, sort by name as fallback
-      return a.name.localeCompare(b.name);
-    })[0];
+      // If neither has start time, maintain original order
+      return 0;
+    });
+    
+    return sortedStages[0];
   };
   
   // Get the appropriate icon for the stage status
@@ -429,17 +427,20 @@ const BuildsView: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        {timelineLoading ? (
-                          <Typography variant="body2" color="text.secondary" sx={{ animation: 'pulse 1.5s infinite ease-in-out' }}>
-                            Loading...
-                          </Typography>
+                        {timelineLoading.has(build.id) ? (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <CircularProgress size={16} />
+                            <Typography variant="body2" color="text.secondary">
+                              Loading...
+                            </Typography>
+                          </Box>
                         ) : buildTimelines.has(build.id) ? (
                           <>
                             <Box>
                               {getStageStatusIcon(getLastStage(buildTimelines.get(build.id)?.records))}
                             </Box>
                             <Typography variant="body2" sx={{ fontWeight: 'medium', color: 'text.primary' }}>
-                              {getLastStage(buildTimelines.get(build.id)?.records)?.name || ''}
+                              {getLastStage(buildTimelines.get(build.id)?.records)?.name || 'No stages found'}
                             </Typography>
                           </>
                         ) : (
