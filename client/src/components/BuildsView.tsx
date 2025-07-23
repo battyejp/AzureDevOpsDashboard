@@ -318,24 +318,13 @@ const BuildsView: React.FC = () => {
           Filters
         </Typography>
         <Box sx={{ 
-          display: 'grid', 
-          gridTemplateColumns: { 
-            xs: '1fr', 
-            md: 'repeat(3, 1fr)' 
-          }, 
-          gap: 3 
+          display: 'grid',
+          gridTemplateColumns: {
+            xs: '1fr',
+            md: 'repeat(2, 1fr)'
+          },
+          gap: 3
         }}>
-          <FormControl fullWidth>
-            <InputLabel>Organization</InputLabel>
-            <Select
-              value={organization}
-              label="Organization"
-              disabled
-            >
-              <MenuItem value={organization}>{organization}</MenuItem>
-            </Select>
-          </FormControl>
-          
           <FormControl fullWidth disabled={loading || projects.length === 0}>
             <InputLabel>Project</InputLabel>
             <Select
@@ -350,7 +339,6 @@ const BuildsView: React.FC = () => {
               ))}
             </Select>
           </FormControl>
-          
           <FormControl fullWidth disabled={loading || pipelines.length === 0}>
             <InputLabel>Pipeline</InputLabel>
             <Select
