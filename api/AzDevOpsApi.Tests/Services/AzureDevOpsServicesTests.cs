@@ -82,6 +82,16 @@ public class AzureDevOpsServicesTests : IDisposable
         Assert.Equal("InProgress", builds[1].Status);
         Assert.Equal("Succeeded", builds[0].Result);
         Assert.Null(builds[1].Result);
+        
+        // Verify tags are properly populated
+        Assert.NotNull(builds[0].Tags);
+        Assert.Equal(2, builds[0].Tags.Length);
+        Assert.Contains("production", builds[0].Tags);
+        Assert.Contains("release", builds[0].Tags);
+        
+        Assert.NotNull(builds[1].Tags);
+        Assert.Single(builds[1].Tags);
+        Assert.Contains("development", builds[1].Tags);
     }
 
     [Fact]
@@ -479,7 +489,8 @@ public class AzureDevOpsServicesTests : IDisposable
                     ""finishTime"": ""2024-01-01T10:30:00Z"",
                     ""url"": ""https://dev.azure.com/testorg/testproject/_build/results?buildId=100"",
                     ""sourceBranch"": ""refs/heads/main"",
-                    ""sourceVersion"": ""abc123""
+                    ""sourceVersion"": ""abc123"",
+                    ""tags"": [""production"", ""release""]
                 },
                 {
                     ""id"": 101,
@@ -490,7 +501,8 @@ public class AzureDevOpsServicesTests : IDisposable
                     ""finishTime"": null,
                     ""url"": ""https://dev.azure.com/testorg/testproject/_build/results?buildId=101"",
                     ""sourceBranch"": ""refs/heads/feature"",
-                    ""sourceVersion"": ""def456""
+                    ""sourceVersion"": ""def456"",
+                    ""tags"": [""development""]
                 }
             ]
         }";
@@ -707,7 +719,8 @@ public class AzureDevOpsServicesTests : IDisposable
                     ""finishTime"": ""2024-01-01T10:30:00Z"",
                     ""url"": ""https://dev.azure.com/testorg/testproject/_build/results?buildId=100"",
                     ""sourceBranch"": ""refs/heads/main"",
-                    ""sourceVersion"": ""abc123""
+                    ""sourceVersion"": ""abc123"",
+                    ""tags"": [""staging"", ""deployment""]
                 }
             ]
         }";
@@ -919,7 +932,8 @@ public class AzureDevOpsServicesTests : IDisposable
                     ""finishTime"": ""2024-01-01T10:30:00Z"",
                     ""url"": ""https://dev.azure.com/testorg/testproject/_build/results?buildId=100"",
                     ""sourceBranch"": ""refs/heads/main"",
-                    ""sourceVersion"": ""abc123""
+                    ""sourceVersion"": ""abc123"",
+                    ""tags"": [""staging"", ""deployment""]
                 },
                 {
                     ""id"": 101,
@@ -930,7 +944,8 @@ public class AzureDevOpsServicesTests : IDisposable
                     ""finishTime"": ""2024-01-01T09:30:00Z"",
                     ""url"": ""https://dev.azure.com/testorg/testproject/_build/results?buildId=101"",
                     ""sourceBranch"": ""refs/heads/main"",
-                    ""sourceVersion"": ""def456""
+                    ""sourceVersion"": ""def456"",
+                    ""tags"": [""production"", ""hotfix""]
                 }
             ]
         }";

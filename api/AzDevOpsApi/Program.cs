@@ -18,6 +18,7 @@ builder.Services.AddCors(options =>
             builder
                 .WithOrigins(
                     "http://localhost:3000", // React development server
+                    "http://localhost:3001", // React production build server
                     "http://localhost:5173"  // Vite development server (if you use Vite)
                 )
                 .AllowAnyMethod()

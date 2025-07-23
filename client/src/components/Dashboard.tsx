@@ -182,7 +182,7 @@ const Dashboard: React.FC = () => {
   return (
     <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
       <Typography variant="h4" component="h1" gutterBottom>
-        Azure DevOps Dashboard
+        Deployments
       </Typography>
 
       {/* Filters */}
@@ -191,23 +191,13 @@ const Dashboard: React.FC = () => {
           Filters
         </Typography>
         <Box sx={{ 
-          display: 'grid', 
-          gridTemplateColumns: { 
-            xs: '1fr', 
-            md: 'repeat(3, 1fr)' 
-          }, 
-          gap: 3 
+          display: 'grid',
+          gridTemplateColumns: {
+            xs: '1fr',
+            md: 'repeat(2, 1fr)'
+          },
+          gap: 3
         }}>
-          <FormControl fullWidth>
-            <InputLabel>Organization</InputLabel>
-            <Select
-              value={filters.organization}
-              label="Organization"
-              onChange={handleOrganizationChange}
-            >
-              <MenuItem value={appConfig.azureDevOpsOrganization}>{appConfig.azureDevOpsOrganization}</MenuItem>
-            </Select>
-          </FormControl>
           
           <FormControl fullWidth disabled={loading || projects.length === 0}>
             <InputLabel>Project</InputLabel>
