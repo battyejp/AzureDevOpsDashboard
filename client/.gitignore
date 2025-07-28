@@ -8,6 +8,10 @@
 # testing
 /coverage
 
+# playwright test artifacts
+/test-results/
+/playwright-report/
+
 # production
 /build
 
