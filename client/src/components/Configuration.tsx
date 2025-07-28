@@ -35,6 +35,14 @@ const Configuration: React.FC = () => {
         setLoading(true);
         setError('');
 
+        // Test API connectivity first
+        const isConnected = await ApiService.testApiConnectivity();
+        if (!isConnected) {
+          setError('Cannot connect to the Azure DevOps API backend. Please ensure the backend service is running and accessible.');
+          setLoading(false);
+          return;
+        }
+
         // Load projects from API
         const projectData = await ApiService.getProjects(appConfig.azureDevOpsOrganization);
         setProjects(projectData);
@@ -44,8 +52,8 @@ const Configuration: React.FC = () => {
         if (currentDefault) {
           setDefaultProject(currentDefault);
         }
-      } catch (err) {
-        setError('Failed to load projects');
+      } catch (err: any) {
+        setError(err.message || 'Failed to load projects');
         console.error('Error loading configuration data:', err);
       } finally {
         setLoading(false);

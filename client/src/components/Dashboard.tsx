@@ -35,6 +35,16 @@ const Dashboard: React.FC = () => {
     const loadProjects = async () => {
       try {
         setLoading(true);
+        setError('');
+
+        // Test API connectivity first
+        const isConnected = await ApiService.testApiConnectivity();
+        if (!isConnected) {
+          setError('Cannot connect to the Azure DevOps API backend. Please ensure the backend service is running and accessible.');
+          setLoading(false);
+          return;
+        }
+
         const projectData = await ApiService.getProjects(filters.organization);
         setProjects(projectData);
         
@@ -46,8 +56,8 @@ const Dashboard: React.FC = () => {
             : projectData[0].name;
           setFilters(prev => ({ ...prev, project: projectToSelect }));
         }
-      } catch (err) {
-        setError('Failed to load projects');
+      } catch (err: any) {
+        setError(err.message || 'Failed to load projects');
         console.error('Error loading projects:', err);
       } finally {
         setLoading(false);
@@ -115,14 +125,14 @@ const Dashboard: React.FC = () => {
             };
             return updated;
           });
-        } catch (err) {
+        } catch (err: any) {
           console.error(`Error loading data for pipeline ${pipeline.name}:`, err);
           setPipelineStatuses(prev => {
             const updated = [...prev];
             updated[index] = {
               ...updated[index],
               isLoading: false,
-              error: 'Failed to load pipeline data'
+              error: err.message || 'Failed to load pipeline data'
             };
             return updated;
           });
@@ -130,8 +140,8 @@ const Dashboard: React.FC = () => {
           updateLoadingState();
         }
       });
-    } catch (err) {
-      setError('Failed to load pipelines');
+    } catch (err: any) {
+      setError(err.message || 'Failed to load pipelines');
       console.error('Error loading pipelines:', err);
       setLoading(false);
     }

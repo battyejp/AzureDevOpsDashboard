@@ -58,31 +58,17 @@ const BuildsView: React.FC = () => {
     return `refs/heads/${branch}`;
   };
 
-  // Add a test function to directly check API connectivity
-  const testApiConnectivity = async () => {
-    try {
-      console.log('Testing API connectivity...');
-      const response = await fetch('http://localhost:5031/api/projects');
-      const data = await response.json();
-      console.log('API connectivity test successful:', data);
-      return true;
-    } catch (err) {
-      console.error('API connectivity test failed:', err);
-      setError('API connectivity test failed. Check console for details.');
-      return false;
-    }
-  };
-
   // Load projects on component mount
   useEffect(() => {
     const loadProjects = async () => {
       try {
         setLoading(true);
-        
+        setError('');
+
         // Test API connectivity first
-        const isApiConnected = await testApiConnectivity();
-        if (!isApiConnected) {
-          setError('Cannot connect to API. Please check server status and CORS settings.');
+        const isConnected = await ApiService.testApiConnectivity();
+        if (!isConnected) {
+          setError('Cannot connect to the Azure DevOps API backend. Please ensure the backend service is running and accessible.');
           setLoading(false);
           return;
         }
@@ -98,8 +84,8 @@ const BuildsView: React.FC = () => {
             : projectData[0].name;
           setSelectedProject(projectToSelect);
         }
-      } catch (err) {
-        setError('Failed to load projects');
+      } catch (err: any) {
+        setError(err.message || 'Failed to load projects');
         console.error('Error loading projects:', err);
       } finally {
         setLoading(false);
@@ -127,8 +113,8 @@ const BuildsView: React.FC = () => {
         if (pipelineData.length > 0) {
           setSelectedPipeline(pipelineData[0].id);
         }
-      } catch (err) {
-        setError('Failed to load pipelines');
+      } catch (err: any) {
+        setError(err.message || 'Failed to load pipelines');
         console.error('Error loading pipelines:', err);
       } finally {
         setLoading(false);
@@ -184,24 +170,6 @@ const BuildsView: React.FC = () => {
         setError(''); // Clear previous errors
         console.log(`Loading builds for pipeline ${selectedPipeline} in project ${selectedProject} with branch ${branchFilter} and reason ${reasonFilter}`);
 
-        // Add extra logging for API connectivity
-        try {
-          const apiTestResponse = await fetch('http://localhost:5031/api/projects');
-          if (!apiTestResponse.ok) {
-            throw new Error(`API connectivity test failed: ${apiTestResponse.status} ${apiTestResponse.statusText}`);
-          }
-          const apiTestData = await apiTestResponse.json();
-          console.log('API connectivity verified:', apiTestData);
-        } catch (apiTestErr: unknown) {
-          console.error('Pre-request API test failed:', apiTestErr);
-          const errorMessage = apiTestErr instanceof Error 
-            ? apiTestErr.message 
-            : 'Unknown error during API connectivity test';
-          setError(`API connectivity test failed: ${errorMessage}`);
-          setLoading(false);
-          return;
-        }
-
         // Call API with branch and reason filter
         const buildData = await ApiService.getBuilds(
           organization,
@@ -225,7 +193,7 @@ const BuildsView: React.FC = () => {
         setTimelineLoading(new Set());
       } catch (err: any) {
         const errorMessage = err?.message || 'Unknown error';
-        setError(`Failed to load builds: ${errorMessage}`);
+        setError(errorMessage);
         console.error('Error loading builds:', err);
         setBuilds([]); // Reset builds on error
       } finally {

@@ -19,13 +19,39 @@ const apiClient = axios.create({
 });
 
 export class ApiService {
+  static async testApiConnectivity(): Promise<boolean> {
+    try {
+      // Test basic connectivity to the API
+      const response = await apiClient.get('/projects', { timeout: 5000 });
+      return response.status === 200;
+    } catch (error: any) {
+      console.error('API connectivity test failed:', error);
+      return false;
+    }
+  }
+
   static async getProjects(organization: string): Promise<Project[]> {
     try {
       const response = await apiClient.get<Project[]>(`/projects`);
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching projects:', error);
-      throw new Error('Failed to fetch projects');
+      
+      // Provide more specific error messages
+      if (error.code === 'ECONNABORTED' || error.code === 'NETWORK_ERROR') {
+        throw new Error('Cannot connect to Azure DevOps API. Please check if the backend service is running.');
+      }
+      if (error.response?.status === 404) {
+        throw new Error('API endpoint not found. Please check the backend service configuration.');
+      }
+      if (error.response?.status >= 500) {
+        throw new Error('Azure DevOps API server error. Please try again later.');
+      }
+      if (!navigator.onLine) {
+        throw new Error('No internet connection. Please check your network.');
+      }
+      
+      throw new Error(`Failed to fetch projects: ${error.message || 'Unknown error'}`);
     }
   }
 
@@ -33,9 +59,24 @@ export class ApiService {
     try {
       const response = await apiClient.get<Pipeline[]>(`/pipelines?project=${encodeURIComponent(project)}`);
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching pipelines:', error);
-      throw new Error('Failed to fetch pipelines');
+      
+      // Provide more specific error messages
+      if (error.code === 'ECONNABORTED' || error.code === 'NETWORK_ERROR') {
+        throw new Error('Cannot connect to Azure DevOps API. Please check if the backend service is running.');
+      }
+      if (error.response?.status === 404) {
+        throw new Error('Pipelines API endpoint not found. Please check the backend service configuration.');
+      }
+      if (error.response?.status >= 500) {
+        throw new Error('Azure DevOps API server error. Please try again later.');
+      }
+      if (!navigator.onLine) {
+        throw new Error('No internet connection. Please check your network.');
+      }
+      
+      throw new Error(`Failed to fetch pipelines: ${error.message || 'Unknown error'}`);
     }
   }
 
@@ -92,7 +133,22 @@ export class ApiService {
         status: error.response?.status,
         url: error.config?.url
       });
-      throw new Error(`Failed to fetch builds: ${error.message}`);
+      
+      // Provide more specific error messages
+      if (error.code === 'ECONNABORTED' || error.code === 'NETWORK_ERROR') {
+        throw new Error('Cannot connect to Azure DevOps API. Please check if the backend service is running.');
+      }
+      if (error.response?.status === 404) {
+        throw new Error('Builds API endpoint not found. Please check the backend service configuration.');
+      }
+      if (error.response?.status >= 500) {
+        throw new Error('Azure DevOps API server error. Please try again later.');
+      }
+      if (!navigator.onLine) {
+        throw new Error('No internet connection. Please check your network.');
+      }
+      
+      throw new Error(`Failed to fetch builds: ${error.message || 'Unknown error'}`);
     }
   }
 
