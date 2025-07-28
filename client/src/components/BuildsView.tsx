@@ -102,16 +102,22 @@ const BuildsView: React.FC = () => {
 
       try {
         setLoading(true);
-        const pipelineData = await ApiService.getPipelines(organization, selectedProject);
-        setPipelines(pipelineData);
+        const allPipelines = await ApiService.getPipelines(organization, selectedProject);
+        
+        // Apply pipeline filtering based on user configuration
+        const filteredPipelines = allPipelines.filter(pipeline => 
+          ConfigService.isPipelineVisible(selectedProject, pipeline.id)
+        );
+        
+        setPipelines(filteredPipelines);
         
         // Reset selected pipeline and builds
         setSelectedPipeline('');
         setBuilds([]);
         
         // Auto-select first pipeline if available
-        if (pipelineData.length > 0) {
-          setSelectedPipeline(pipelineData[0].id);
+        if (filteredPipelines.length > 0) {
+          setSelectedPipeline(filteredPipelines[0].id);
         }
       } catch (err: any) {
         setError(err.message || 'Failed to load pipelines');

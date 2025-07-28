@@ -78,10 +78,15 @@ const Dashboard: React.FC = () => {
       setError('');
       
       // Get all pipelines for the project
-      const pipelines = await ApiService.getPipelines(filters.organization, filters.project);
+      const allPipelines = await ApiService.getPipelines(filters.organization, filters.project);
+      
+      // Apply pipeline filtering based on user configuration
+      const filteredPipelines = allPipelines.filter(pipeline => 
+        ConfigService.isPipelineVisible(filters.project, pipeline.id)
+      );
       
       // Initialize pipeline statuses with loading state
-      const initialStatuses: PipelineStatus[] = pipelines.map(pipeline => ({
+      const initialStatuses: PipelineStatus[] = filteredPipelines.map(pipeline => ({
         pipelineId: pipeline.id,
         pipelineName: pipeline.name,
         isLoading: true,
@@ -93,7 +98,7 @@ const Dashboard: React.FC = () => {
       setPipelineStatuses(initialStatuses);
 
       // Track the loading state of all pipelines
-      let pendingPipelines = pipelines.length;
+      let pendingPipelines = filteredPipelines.length;
       const updateLoadingState = () => {
         pendingPipelines--;
         if (pendingPipelines <= 0) {
@@ -102,7 +107,7 @@ const Dashboard: React.FC = () => {
       };
 
       // Load data for each pipeline asynchronously
-      pipelines.forEach(async (pipeline, index) => {
+      filteredPipelines.forEach(async (pipeline, index) => {
         try {
           // Only fetch deployed builds for the selected environment
           const deployedBuild = await ApiService.getLatestDeployedBuild(

@@ -11,20 +11,27 @@ import {
   Alert,
   CircularProgress,
   Button,
-  SelectChangeEvent
+  SelectChangeEvent,
+  Chip,
+  OutlinedInput,
+  Divider
 } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
 import SaveIcon from '@mui/icons-material/Save';
 import ClearIcon from '@mui/icons-material/Clear';
 import { ApiService } from '../services/apiService';
 import { ConfigService } from '../services/configService';
-import { Project } from '../models/types';
+import { Project, Pipeline } from '../models/types';
 import { appConfig } from '../config/appConfig';
 
 const Configuration: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [defaultProject, setDefaultProject] = useState<string>('');
+  const [selectedProjectForFilters, setSelectedProjectForFilters] = useState<string>('');
+  const [pipelines, setPipelines] = useState<Pipeline[]>([]);
+  const [selectedPipelines, setSelectedPipelines] = useState<number[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [pipelinesLoading, setPipelinesLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>('');
 
@@ -63,6 +70,41 @@ const Configuration: React.FC = () => {
     loadData();
   }, []);
 
+  // Load pipelines when a project is selected for filtering
+  useEffect(() => {
+    const loadPipelines = async () => {
+      if (!selectedProjectForFilters) {
+        setPipelines([]);
+        setSelectedPipelines([]);
+        return;
+      }
+
+      try {
+        setPipelinesLoading(true);
+        setError('');
+
+        // Load pipelines for the selected project
+        const pipelineData = await ApiService.getPipelines(appConfig.azureDevOpsOrganization, selectedProjectForFilters);
+        setPipelines(pipelineData);
+
+        // Load existing pipeline filters for this project
+        const existingFilters = ConfigService.getPipelineFilters(selectedProjectForFilters);
+        if (existingFilters) {
+          setSelectedPipelines(existingFilters);
+        } else {
+          setSelectedPipelines([]); // No filters means show all pipelines
+        }
+      } catch (err: any) {
+        setError(err.message || 'Failed to load pipelines');
+        console.error('Error loading pipelines:', err);
+      } finally {
+        setPipelinesLoading(false);
+      }
+    };
+
+    loadPipelines();
+  }, [selectedProjectForFilters]);
+
   const handleProjectChange = (event: SelectChangeEvent<string>) => {
     setDefaultProject(event.target.value);
     // Clear any previous messages
@@ -70,14 +112,42 @@ const Configuration: React.FC = () => {
     setError('');
   };
 
+  const handleFilterProjectChange = (event: SelectChangeEvent<string>) => {
+    setSelectedProjectForFilters(event.target.value);
+    // Clear any previous messages
+    setSuccess('');
+    setError('');
+  };
+
+  const handlePipelineSelectionChange = (event: SelectChangeEvent<typeof selectedPipelines>) => {
+    const value = event.target.value;
+    setSelectedPipelines(typeof value === 'string' ? value.split(',').map(Number) : value);
+    // Clear any previous messages
+    setSuccess('');
+    setError('');
+  };
+
   const handleSave = () => {
     try {
+      let hasChanges = false;
+      
+      // Save default project if specified
       if (defaultProject) {
         ConfigService.setDefaultProject(defaultProject);
-        setSuccess('Default project saved successfully!');
+        hasChanges = true;
+      }
+      
+      // Save pipeline filters if a project is selected for filtering
+      if (selectedProjectForFilters) {
+        ConfigService.setPipelineFilters(selectedProjectForFilters, selectedPipelines);
+        hasChanges = true;
+      }
+      
+      if (hasChanges) {
+        setSuccess('Configuration saved successfully!');
         setError('');
       } else {
-        setError('Please select a project before saving.');
+        setError('No configuration changes to save.');
       }
     } catch (err) {
       setError('Failed to save configuration');
@@ -89,11 +159,28 @@ const Configuration: React.FC = () => {
     try {
       ConfigService.clearConfig();
       setDefaultProject('');
+      setSelectedProjectForFilters('');
+      setSelectedPipelines([]);
+      setPipelines([]);
       setSuccess('Configuration cleared successfully!');
       setError('');
     } catch (err) {
       setError('Failed to clear configuration');
       console.error('Error clearing configuration:', err);
+    }
+  };
+
+  const handleClearPipelineFilters = () => {
+    if (selectedProjectForFilters) {
+      try {
+        ConfigService.clearPipelineFilters(selectedProjectForFilters);
+        setSelectedPipelines([]);
+        setSuccess(`Pipeline filters cleared for ${selectedProjectForFilters}!`);
+        setError('');
+      } catch (err) {
+        setError('Failed to clear pipeline filters');
+        console.error('Error clearing pipeline filters:', err);
+      }
     }
   };
 
@@ -153,6 +240,103 @@ const Configuration: React.FC = () => {
               </Select>
             </FormControl>
 
+            <Divider sx={{ my: 3 }} />
+
+            {/* Pipeline Filtering Section */}
+            <Typography variant="h6" sx={{ mb: 2 }}>
+              Pipeline Filtering
+            </Typography>
+            <Typography variant="body2" sx={{ mb: 3, color: 'text.secondary' }}>
+              Configure which pipelines should be visible for each project. 
+              If no pipelines are selected, all pipelines will be shown.
+            </Typography>
+
+            <FormControl fullWidth sx={{ mb: 3 }}>
+              <InputLabel id="filter-project-label">Project to Configure</InputLabel>
+              <Select
+                labelId="filter-project-label"
+                id="filter-project-select"
+                value={selectedProjectForFilters}
+                label="Project to Configure"
+                onChange={handleFilterProjectChange}
+                disabled={projects.length === 0}
+              >
+                <MenuItem value="">
+                  <em>Select a project</em>
+                </MenuItem>
+                {projects.map((project) => (
+                  <MenuItem key={project.id} value={project.name}>
+                    {project.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {selectedProjectForFilters && (
+              <>
+                {pipelinesLoading && (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+                    <CircularProgress size={24} />
+                  </Box>
+                )}
+
+                {!pipelinesLoading && pipelines.length > 0 && (
+                  <FormControl fullWidth sx={{ mb: 3 }}>
+                    <InputLabel id="pipelines-label">
+                      Visible Pipelines (leave empty to show all)
+                    </InputLabel>
+                    <Select
+                      labelId="pipelines-label"
+                      id="pipelines-select"
+                      multiple
+                      value={selectedPipelines}
+                      onChange={handlePipelineSelectionChange}
+                      input={<OutlinedInput label="Visible Pipelines (leave empty to show all)" />}
+                      renderValue={(selected) => (
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                          {selected.map((pipelineId) => {
+                            const pipeline = pipelines.find(p => p.id === pipelineId);
+                            return (
+                              <Chip 
+                                key={pipelineId} 
+                                label={pipeline?.name || `Pipeline ${pipelineId}`} 
+                                size="small" 
+                              />
+                            );
+                          })}
+                        </Box>
+                      )}
+                    >
+                      {pipelines.map((pipeline) => (
+                        <MenuItem key={pipeline.id} value={pipeline.id}>
+                          {pipeline.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                )}
+
+                {!pipelinesLoading && pipelines.length === 0 && (
+                  <Alert severity="info" sx={{ mb: 3 }}>
+                    No pipelines found for the selected project.
+                  </Alert>
+                )}
+
+                {selectedProjectForFilters && selectedPipelines.length > 0 && (
+                  <Button
+                    variant="outlined"
+                    color="warning"
+                    startIcon={<ClearIcon />}
+                    onClick={handleClearPipelineFilters}
+                    disabled={loading || pipelinesLoading}
+                    sx={{ mb: 2 }}
+                  >
+                    Clear Pipeline Filters for {selectedProjectForFilters}
+                  </Button>
+                )}
+              </>
+            )}
+
             {projects.length === 0 && !loading && (
               <Alert severity="warning" sx={{ mb: 3 }}>
                 No projects found. Please check your Azure DevOps connection.
@@ -165,7 +349,7 @@ const Configuration: React.FC = () => {
                 color="primary"
                 startIcon={<SaveIcon />}
                 onClick={handleSave}
-                disabled={!defaultProject || loading}
+                disabled={loading || pipelinesLoading}
               >
                 Save Configuration
               </Button>
@@ -175,9 +359,9 @@ const Configuration: React.FC = () => {
                 color="secondary"
                 startIcon={<ClearIcon />}
                 onClick={handleClear}
-                disabled={loading}
+                disabled={loading || pipelinesLoading}
               >
-                Clear Configuration
+                Clear All Configuration
               </Button>
             </Box>
           </Box>
@@ -189,8 +373,11 @@ const Configuration: React.FC = () => {
           </Typography>
           <Typography variant="body2" component="ul" sx={{ pl: 2 }}>
             <li>Select a default project from the dropdown above</li>
-            <li>Click "Save Configuration" to persist your choice</li>
+            <li>Configure pipeline filtering by selecting a project and choosing which pipelines to show</li>
+            <li>Leave pipeline selection empty to show all pipelines for a project</li>
+            <li>Click "Save Configuration" to persist your choices</li>
             <li>The selected project will be automatically chosen in all views</li>
+            <li>Only configured pipelines will be visible in the dashboard</li>
             <li>You can still manually change the project in individual views if needed</li>
             <li>Your configuration is saved locally in your browser</li>
           </Typography>
