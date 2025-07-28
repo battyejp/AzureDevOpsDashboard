@@ -10,6 +10,22 @@ Runs the app in development mode with hot reloading.
 
 Launches the test runner in interactive watch mode.
 
+### `npm run test:e2e`
+
+Runs Playwright end-to-end tests in all browsers.
+
+### `npm run test:e2e:smoke`
+
+Runs basic smoke tests using Playwright (faster, good for CI).
+
+### `npm run test:e2e:ui`
+
+Runs Playwright tests with UI mode for debugging.
+
+### `npm run build:with-tests`
+
+Builds the app for production and runs smoke tests.
+
 ### `npm run build`
 
 Builds the app for production to the `build` folder, optimized for performance.
@@ -92,6 +108,35 @@ client/
  ├── package.json           # Dependencies and scripts
  └── tsconfig.json          # TypeScript configuration
 ```
+
+## Testing
+
+The application includes comprehensive end-to-end testing using Playwright with mock data.
+
+### Running Tests
+
+```bash
+# Run all Playwright tests
+npm run test:e2e
+
+# Run smoke tests (recommended for CI/local dev)
+npm run test:e2e:smoke
+
+# Run tests with visual debugging
+npm run test:e2e:ui
+
+# Build and test together
+npm run build:with-tests
+```
+
+### Test Features
+
+- **Mock API Responses**: Tests use comprehensive mock data, no backend required
+- **Cross-browser Testing**: Tests run on Chrome, Firefox, and Safari
+- **Multiple Test Suites**: Smoke tests, navigation tests, form validation tests
+- **CI/CD Integration**: Smoke tests run automatically in GitHub Actions
+
+See [TESTING.md](./TESTING.md) for detailed testing documentation.
 
 ## Docker Support
 

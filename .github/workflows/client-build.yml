@@ -54,6 +54,24 @@ jobs:
         # Set any required environment variables for build
         REACT_APP_AZDEVOPS_ORGANIZATION: "placeholder"
         REACT_APP_API_URL: "placeholder"
+
+    - name: Install Playwright browsers
+      run: npx playwright install --with-deps
+
+    - name: Run Playwright smoke tests
+      run: npm run test:e2e:smoke
+      env:
+        CI: true
+
+    - name: Upload Playwright test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: playwright-test-results
+        path: |
+          client/playwright-report/
+          client/test-results/
+        retention-days: 30
     
     - name: Upload Test Results
       uses: actions/upload-artifact@v4
