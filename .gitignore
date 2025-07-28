@@ -4,7 +4,6 @@ obj/
 
 # Visual Studio / Visual Studio Code files
 .vs/
-.vscode/
 *.user
 *.userosscache
 *.suo
@@ -15,6 +14,13 @@ obj/
 *.pfx
 *.publishsettings
 orleans.codegen.cs
+
+### VisualStudioCode ###
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
 
 # Rider files
 .idea/
