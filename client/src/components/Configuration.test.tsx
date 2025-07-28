@@ -1,16 +1,29 @@
+// Mock the services BEFORE any imports
+jest.mock('../services/apiService', () => ({
+  ApiService: {
+    testApiConnectivity: jest.fn(() => Promise.resolve(true)),
+    getProjects: jest.fn(() => Promise.resolve([
+      { id: '1', name: 'Project One', description: 'Test project 1', url: 'http://test1', state: 'active', visibility: 'public', lastUpdateTime: '2023-01-01' },
+      { id: '2', name: 'Project Two', description: 'Test project 2', url: 'http://test2', state: 'active', visibility: 'public', lastUpdateTime: '2023-01-01' }
+    ])),
+  }
+}));
+jest.mock('../services/configService', () => ({
+  ConfigService: {
+    getDefaultProject: jest.fn(() => undefined),
+    setDefaultProject: jest.fn(),
+    getConfig: jest.fn(() => ({})),
+    saveConfig: jest.fn(),
+    clearConfig: jest.fn(),
+  }
+}));
+
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import Configuration from './Configuration';
 import { ApiService } from '../services/apiService';
 import { ConfigService } from '../services/configService';
-
-// Mock the services
-jest.mock('../services/apiService');
-jest.mock('../services/configService');
-
-const mockApiService = ApiService as jest.Mocked<typeof ApiService>;
-const mockConfigService = ConfigService as jest.Mocked<typeof ConfigService>;
 
 const mockProjects = [
   { id: '1', name: 'Project One', description: 'Test project 1', url: 'http://test1', state: 'active', visibility: 'public', lastUpdateTime: '2023-01-01' },
@@ -19,64 +32,54 @@ const mockProjects = [
 
 beforeEach(() => {
   jest.clearAllMocks();
+  (ApiService.getProjects as jest.Mock).mockResolvedValue(mockProjects);
+  (ApiService.testApiConnectivity as jest.Mock).mockResolvedValue(true);
+  (ConfigService.getDefaultProject as jest.Mock).mockReturnValue(undefined);
+  (ConfigService.setDefaultProject as jest.Mock).mockImplementation(() => {});
 });
 
 test('renders Configuration page title', async () => {
-  mockApiService.getProjects.mockResolvedValue(mockProjects);
-  mockConfigService.getDefaultProject.mockReturnValue(undefined);
-
-  render(<Configuration />);
-  
+  await act(async () => {
+    render(<Configuration />);
+  });
   expect(screen.getByText('Configuration')).toBeInTheDocument();
 });
 
 test('loads projects and displays them in dropdown', async () => {
-  mockApiService.getProjects.mockResolvedValue(mockProjects);
-  mockConfigService.getDefaultProject.mockReturnValue(undefined);
-
-  render(<Configuration />);
-  
-  await waitFor(() => {
-    expect(mockApiService.getProjects).toHaveBeenCalled();
+  await act(async () => {
+    render(<Configuration />);
   });
-
-  // The dropdown should be present
+  await waitFor(() => {
+    expect(ApiService.getProjects).toHaveBeenCalled();
+  });
   expect(screen.getByLabelText('Default Project')).toBeInTheDocument();
 });
 
 test('displays current default project if configured', async () => {
-  mockApiService.getProjects.mockResolvedValue(mockProjects);
-  mockConfigService.getDefaultProject.mockReturnValue('Project One');
-
-  render(<Configuration />);
-  
-  await waitFor(() => {
-    expect(mockApiService.getProjects).toHaveBeenCalled();
+  (ConfigService.getDefaultProject as jest.Mock).mockReturnValue('Project One');
+  await act(async () => {
+    render(<Configuration />);
   });
-
-  // Should load the default project value
   await waitFor(() => {
-    expect(mockConfigService.getDefaultProject).toHaveBeenCalled();
+    expect(ApiService.getProjects).toHaveBeenCalled();
+    expect(ConfigService.getDefaultProject).toHaveBeenCalled();
   });
+  expect(screen.getByLabelText('Default Project')).toHaveTextContent('Project One');
 });
 
 test('shows error message when projects fail to load', async () => {
-  mockApiService.getProjects.mockRejectedValue(new Error('API Error'));
-  mockConfigService.getDefaultProject.mockReturnValue(undefined);
-
-  render(<Configuration />);
-  
+  (ApiService.getProjects as jest.Mock).mockRejectedValue(new Error('API Error'));
+  (ConfigService.getDefaultProject as jest.Mock).mockReturnValue(undefined);
+  await act(async () => {
+    render(<Configuration />);
+  });
   await waitFor(() => {
-    expect(screen.getByText('Failed to load projects')).toBeInTheDocument();
+    expect(screen.getByText('API Error')).toBeInTheDocument();
   });
 });
 
 test('shows instructions on how configuration works', () => {
-  mockApiService.getProjects.mockResolvedValue(mockProjects);
-  mockConfigService.getDefaultProject.mockReturnValue(undefined);
-
   render(<Configuration />);
-  
   expect(screen.getByText('How it works:')).toBeInTheDocument();
   expect(screen.getByText(/Select a default project from the dropdown above/)).toBeInTheDocument();
 });

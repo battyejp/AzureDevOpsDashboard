@@ -2,10 +2,20 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import App from './App';
 import { appConfig } from './config/appConfig';
-import * as apiServiceModule from './services/apiService';
+
+import { ApiService } from './services/apiService';
+import { ConfigService } from './services/configService';
+
+jest.mock('./services/apiService');
+jest.mock('./services/configService');
+
+const mockApiService = ApiService as jest.Mocked<typeof ApiService>;
+const mockConfigService = ConfigService as jest.Mocked<typeof ConfigService>;
+
 
 beforeEach(() => {
-  jest.spyOn(apiServiceModule.ApiService, 'getProjects').mockResolvedValue([
+  jest.clearAllMocks();
+  mockApiService.getProjects.mockResolvedValue([
     {
       id: '1',
       name: 'Sample Project',
@@ -16,6 +26,8 @@ beforeEach(() => {
       lastUpdateTime: new Date().toISOString(),
     },
   ]);
+  mockApiService.testApiConnectivity.mockResolvedValue(true);
+  mockConfigService.getDefaultProject.mockReturnValue(undefined);
 });
 
 afterEach(() => {
@@ -36,9 +48,12 @@ test('renders filters section', () => {
 
 test('renders project select field with project name', async () => {
   render(<App />);
-  // Wait for the project name to appear in the select field
-  const projectOption = await screen.findByText('Sample Project');
-  expect(projectOption).toBeInTheDocument();
+  // Wait for all comboboxes to appear
+  const comboboxes = await screen.findAllByRole('combobox');
+  // Find the combobox that contains 'Sample Project'
+  const projectCombo = comboboxes.find(combo => combo.textContent?.includes('Sample Project'));
+  expect(projectCombo).toBeDefined();
+  expect(projectCombo).toHaveTextContent('Sample Project');
 });
 
 test('renders environment select field', () => {
