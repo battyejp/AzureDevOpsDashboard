@@ -84,13 +84,30 @@ namespace AzDevOpsApi.Services
             }
         }
 
-        public async Task<IEnumerable<AzureDevOpsBuild>> GetBuildsAsync(string project, string organization, string pat, int pipelineId, int count)
+
+
+        public async Task<IEnumerable<AzureDevOpsBuild>> GetBuildsAsync(
+            string project,
+            string organization,
+            string pat,
+            int pipelineId,
+            int count,
+            string statusFilter = "all",
+            string? branch = null,
+            string? reasonFilter = null)
         {
             try
             {
-                var url = $"{_baseUrl.TrimEnd('/')}/{organization}/{project}/_apis/build/builds?definitions={pipelineId}&$top={count}&api-version=7.0";
+                var url = $"{_baseUrl.TrimEnd('/')}/{organization}/{project}/_apis/build/builds?definitions={pipelineId}&$top={count}&statusFilter={statusFilter}&queryOrder=startTimeDescending&api-version=7.1";
+                if (!string.IsNullOrEmpty(branch))
+                {
+                    url += $"&branchName={Uri.EscapeDataString(branch)}";
+                }
+                if (!string.IsNullOrEmpty(reasonFilter))
+                {
+                    url += $"&reasonFilter={Uri.EscapeDataString(reasonFilter)}";
+                }
                 var response = await GetAsync<AzureDevOpsBuildsResponse>(url, pat);
-                
                 return response.Value;
             }
             catch (Exception ex)

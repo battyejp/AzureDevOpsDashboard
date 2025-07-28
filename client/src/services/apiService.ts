@@ -1,7 +1,13 @@
 import axios from 'axios';
-import { Project, Pipeline, Build, DeploymentEnvironment, DeployedBuild } from '../models/types';
+import { Project, Pipeline, Build, DeploymentEnvironment, DeployedBuild, BuildTimeline } from '../models/types';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:5031' : '');
+const API_BASE_URL = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:5031/api' : '');
+
+// Log API URL for debugging
+console.log('API Base URL:', API_BASE_URL);
+if (!API_BASE_URL) {
+  console.error('API Base URL is empty! This will cause API calls to fail.');
+}
 
 // Create axios instance with default config
 const apiClient = axios.create({
@@ -15,7 +21,7 @@ const apiClient = axios.create({
 export class ApiService {
   static async getProjects(organization: string): Promise<Project[]> {
     try {
-      const response = await apiClient.get<Project[]>(`/api/projects`);
+      const response = await apiClient.get<Project[]>(`/projects`);
       return response.data;
     } catch (error) {
       console.error('Error fetching projects:', error);
@@ -25,7 +31,7 @@ export class ApiService {
 
   static async getPipelines(organization: string, project: string): Promise<Pipeline[]> {
     try {
-      const response = await apiClient.get<Pipeline[]>(`/api/pipelines?project=${encodeURIComponent(project)}`);
+      const response = await apiClient.get<Pipeline[]>(`/pipelines?project=${encodeURIComponent(project)}`);
       return response.data;
     } catch (error) {
       console.error('Error fetching pipelines:', error);
@@ -37,16 +43,56 @@ export class ApiService {
     organization: string,
     project: string,
     pipelineId: number,
-    count: number = 5
+    count: number = 5,
+    statusFilter: string = '',
+    branch?: string,
+    reasonFilter?: string
   ): Promise<Build[]> {
     try {
-      const response = await apiClient.get<Build[]>(
-        `/api/builds/${pipelineId}?project=${encodeURIComponent(project)}&count=${count}`
-      );
+      let url = `/builds/${pipelineId}?project=${encodeURIComponent(project)}&count=${count}`;
+      if (statusFilter) {
+        url += `&statusFilter=${statusFilter}`;
+      }
+      if (branch !== undefined && branch !== '') {
+        url += `&branch=${encodeURIComponent(branch)}`;
+      }
+      if (reasonFilter !== undefined && reasonFilter !== '') {
+        url += `&reasonFilter=${encodeURIComponent(reasonFilter)}`;
+      }
+
+      console.log(`API call to ${url}`);
+
+      // Add request timeout for debugging
+      const response = await apiClient.get<Build[]>(url, { 
+        timeout: 10000,  // 10 second timeout for debugging
+        headers: { 'Cache-Control': 'no-cache' } // Prevent caching
+      });
+
+      if (!response || !response.data) {
+        console.error('API response is empty or invalid');
+        return [];
+      }
+
+      console.log(`Build API response:`, response.data);
+      console.log(`Build API response length:`, response.data.length);
+
+      // Additional validation of the response data
+      if (Array.isArray(response.data)) {
+        console.log('Response is an array as expected');
+      } else {
+        console.error('Response is not an array:', typeof response.data);
+      }
+
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching builds:', error);
-      throw new Error('Failed to fetch builds');
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        url: error.config?.url
+      });
+      throw new Error(`Failed to fetch builds: ${error.message}`);
     }
   }
 
@@ -64,7 +110,7 @@ export class ApiService {
       // First, try the direct endpoint for the latest deployed build
       try {
         const response = await apiClient.get<any>(
-          `/api/deployedbuilds/${pipelineId}/${environmentName}?project=${encodeURIComponent(project)}`
+          `/deployedbuilds/${pipelineId}/${environmentName}?project=${encodeURIComponent(project)}`
         );
         
         console.log('Deployed builds API response:', response.data);
@@ -110,7 +156,7 @@ export class ApiService {
       
       try {
         const response = await apiClient.get<any>(
-          `/api/deployedbuilds/${pipelineId}/${environmentName}?project=${encodeURIComponent(project)}`
+          `/deployedbuilds/${pipelineId}/${environmentName}?project=${encodeURIComponent(project)}`
         );
         
         console.log('Raw API response for deployed build:', response.data);
@@ -162,6 +208,34 @@ export class ApiService {
       return builds.length > 0 ? builds[0] : null;
     } catch (error) {
       console.error('Error fetching latest build:', error);
+      return null;
+    }
+  }
+
+  static async getBuildTimeline(
+    organization: string,
+    project: string,
+    buildId: number,
+    type?: string,
+    state?: string
+  ): Promise<BuildTimeline | null> {
+    try {
+      let url = `/buildtimeline/${buildId}?project=${encodeURIComponent(project)}`;
+      
+      if (type) {
+        url += `&type=${encodeURIComponent(type)}`;
+      }
+      
+      if (state) {
+        url += `&state=${encodeURIComponent(state)}`;
+      }
+      
+      console.log(`API call to get timeline: ${url}`);
+      const response = await apiClient.get<BuildTimeline>(url);
+      console.log(`Timeline API response for build ${buildId}:`, response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching build timeline:', error);
       return null;
     }
   }

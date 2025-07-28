@@ -68,7 +68,7 @@ public class AzureDevOpsServicesTests : IDisposable
         SetupMockBuildsEndpoint(pipelineId, count);
         
         // Act
-        var response = await _azureDevOpsService.GetBuildsAsync(TestProject, TestOrganization, TestPat, pipelineId, count);
+        var response = await _azureDevOpsService.GetBuildsAsync(TestProject, TestOrganization, TestPat, pipelineId, count, "all", null, null);
 
         // Assert
         Assert.NotNull(response);
@@ -82,6 +82,16 @@ public class AzureDevOpsServicesTests : IDisposable
         Assert.Equal("InProgress", builds[1].Status);
         Assert.Equal("Succeeded", builds[0].Result);
         Assert.Null(builds[1].Result);
+        
+        // Verify tags are properly populated
+        Assert.NotNull(builds[0].Tags);
+        Assert.Equal(2, builds[0].Tags.Length);
+        Assert.Contains("production", builds[0].Tags);
+        Assert.Contains("release", builds[0].Tags);
+        
+        Assert.NotNull(builds[1].Tags);
+        Assert.Single(builds[1].Tags);
+        Assert.Contains("development", builds[1].Tags);
     }
 
     [Fact]
@@ -177,7 +187,7 @@ public class AzureDevOpsServicesTests : IDisposable
         
         // Act & Assert
         await Assert.ThrowsAsync<HttpRequestException>(async () =>
-            await _azureDevOpsService.GetBuildsAsync(TestProject, TestOrganization, TestPat, pipelineId, count));
+            await _azureDevOpsService.GetBuildsAsync(TestProject, TestOrganization, TestPat, pipelineId, count, "all", null, null));
     }
 
     [Fact]
@@ -272,7 +282,7 @@ public class AzureDevOpsServicesTests : IDisposable
         SetupMockEmptyBuildsEndpoint(pipelineId, count);
         
         // Act
-        var response = await _azureDevOpsService.GetBuildsAsync(TestProject, TestOrganization, TestPat, pipelineId, count);
+        var response = await _azureDevOpsService.GetBuildsAsync(TestProject, TestOrganization, TestPat, pipelineId, count, "all", null, null);
 
         // Assert
         Assert.NotNull(response);
@@ -316,9 +326,9 @@ public class AzureDevOpsServicesTests : IDisposable
         
         // Act & Assert
         var exception = await Assert.ThrowsAsync<HttpRequestException>(async () =>
-            await _azureDevOpsService.GetBuildsAsync(TestProject, TestOrganization, TestPat, pipelineId, count));
-        
-        Assert.Contains("401", exception.Message);
+            await _azureDevOpsService.GetBuildsAsync(TestProject, TestOrganization, TestPat, pipelineId, count, "all", null, null));
+        // Accept any message, just ensure it's an unauthorized error
+        Assert.True(exception.Message.Contains("401") || exception.StatusCode == System.Net.HttpStatusCode.Unauthorized || exception.Message.Contains("Unauthorized"), $"Expected unauthorized error, got: {exception.Message}");
     }
 
     [Fact]
@@ -479,7 +489,8 @@ public class AzureDevOpsServicesTests : IDisposable
                     ""finishTime"": ""2024-01-01T10:30:00Z"",
                     ""url"": ""https://dev.azure.com/testorg/testproject/_build/results?buildId=100"",
                     ""sourceBranch"": ""refs/heads/main"",
-                    ""sourceVersion"": ""abc123""
+                    ""sourceVersion"": ""abc123"",
+                    ""tags"": [""production"", ""release""]
                 },
                 {
                     ""id"": 101,
@@ -490,18 +501,21 @@ public class AzureDevOpsServicesTests : IDisposable
                     ""finishTime"": null,
                     ""url"": ""https://dev.azure.com/testorg/testproject/_build/results?buildId=101"",
                     ""sourceBranch"": ""refs/heads/feature"",
-                    ""sourceVersion"": ""def456""
+                    ""sourceVersion"": ""def456"",
+                    ""tags"": [""development""]
                 }
             ]
         }";
 
+        var request = Request.Create()
+            .WithPath($"/{TestOrganization}/{TestProject}/_apis/build/builds")
+            .WithParam("definitions", pipelineId.ToString())
+            .WithParam("$top", count.ToString())
+            .WithParam("api-version", "7.1")
+            .WithParam("statusFilter", "all")
+            .WithParam("queryOrder", "startTimeDescending");
         _wireMockServer
-            .Given(Request.Create()
-                .WithPath($"/{TestOrganization}/{TestProject}/_apis/build/builds")
-                .WithParam("definitions", pipelineId.ToString())
-                .WithParam("$top", count.ToString())
-                .WithParam("api-version", "7.0")
-                .UsingGet())
+            .Given(request.UsingGet())
             .RespondWith(Response.Create()
                 .WithStatusCode(200)
                 .WithHeader("Content-Type", "application/json")
@@ -557,7 +571,7 @@ public class AzureDevOpsServicesTests : IDisposable
         _wireMockServer
             .Given(Request.Create()
                 .WithPath(path)
-                .WithParam("api-version", "7.0")
+                .WithParam("api-version", "7.1")
                 .UsingGet())
             .RespondWith(Response.Create()
                 .WithStatusCode(401)
@@ -707,7 +721,8 @@ public class AzureDevOpsServicesTests : IDisposable
                     ""finishTime"": ""2024-01-01T10:30:00Z"",
                     ""url"": ""https://dev.azure.com/testorg/testproject/_build/results?buildId=100"",
                     ""sourceBranch"": ""refs/heads/main"",
-                    ""sourceVersion"": ""abc123""
+                    ""sourceVersion"": ""abc123"",
+                    ""tags"": [""staging"", ""deployment""]
                 }
             ]
         }";
@@ -919,7 +934,8 @@ public class AzureDevOpsServicesTests : IDisposable
                     ""finishTime"": ""2024-01-01T10:30:00Z"",
                     ""url"": ""https://dev.azure.com/testorg/testproject/_build/results?buildId=100"",
                     ""sourceBranch"": ""refs/heads/main"",
-                    ""sourceVersion"": ""abc123""
+                    ""sourceVersion"": ""abc123"",
+                    ""tags"": [""staging"", ""deployment""]
                 },
                 {
                     ""id"": 101,
@@ -930,7 +946,8 @@ public class AzureDevOpsServicesTests : IDisposable
                     ""finishTime"": ""2024-01-01T09:30:00Z"",
                     ""url"": ""https://dev.azure.com/testorg/testproject/_build/results?buildId=101"",
                     ""sourceBranch"": ""refs/heads/main"",
-                    ""sourceVersion"": ""def456""
+                    ""sourceVersion"": ""def456"",
+                    ""tags"": [""production"", ""hotfix""]
                 }
             ]
         }";
@@ -991,13 +1008,15 @@ public class AzureDevOpsServicesTests : IDisposable
             ""value"": []
         }";
 
+        var request = Request.Create()
+            .WithPath($"/{TestOrganization}/{TestProject}/_apis/build/builds")
+            .WithParam("definitions", pipelineId.ToString())
+            .WithParam("$top", count.ToString())
+            .WithParam("api-version", "7.1")
+            .WithParam("statusFilter", "all")
+            .WithParam("queryOrder", "startTimeDescending");
         _wireMockServer
-            .Given(Request.Create()
-                .WithPath($"/{TestOrganization}/{TestProject}/_apis/build/builds")
-                .WithParam("definitions", pipelineId.ToString())
-                .WithParam("$top", count.ToString())
-                .WithParam("api-version", "7.0")
-                .UsingGet())
+            .Given(request.UsingGet())
             .RespondWith(Response.Create()
                 .WithStatusCode(200)
                 .WithHeader("Content-Type", "application/json")

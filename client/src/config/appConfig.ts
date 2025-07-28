@@ -11,5 +11,5 @@ export const appConfig = {
   /**
    * Base API URL for the backend
    */
-  apiBaseUrl: 'http://localhost:5001/api', // Update as needed for production
+  apiBaseUrl: process.env.REACT_APP_API_URL || 'http://localhost:5031/api',
 };

@@ -41,6 +41,9 @@ export interface Build {
   startTime?: string;
   finishTime?: string;
   url: string;
+  sourceBranch: string;
+  reason: string;
+  tags: string[];
   definition: {
     id: number;
     name: string;
@@ -84,4 +87,21 @@ export interface DashboardFilters {
   organization: string;
   project: string;
   environment: DeploymentEnvironment;
+}
+
+export interface TimelineRecord {
+  id: string;
+  parentId?: string;
+  name: string;
+  type: string;
+  state: string;
+  result?: string;
+  startTime?: string;
+  finishTime?: string;
+  percentComplete?: number;
+}
+
+export interface BuildTimeline {
+  id: string;
+  records: TimelineRecord[];
 }

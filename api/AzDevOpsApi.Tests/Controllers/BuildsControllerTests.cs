@@ -41,45 +41,59 @@ namespace AzDevOpsApi.Tests.Controllers
             
             var expectedBuilds = new List<AzureDevOpsBuild>
             {
-                new AzureDevOpsBuild 
-                { 
-                    Id = 1, 
-                    BuildNumber = "1.0.1", 
-                    Status = "Completed", 
+                new AzureDevOpsBuild
+                {
+                    Id = 1,
+                    BuildNumber = "1.0.1",
+                    Status = "Completed",
                     Result = "Succeeded",
                     StartTime = DateTime.UtcNow.AddHours(-2),
                     FinishTime = DateTime.UtcNow.AddHours(-1),
                     SourceBranch = "refs/heads/main",
                     SourceVersion = "abc123",
-                    Url = "https://dev.azure.com/test-org/TestProject/_build/results?buildId=1"
+                    Url = "https://dev.azure.com/test-org/TestProject/_build/results?buildId=1",
+                    Tags = new[] { "production", "release" }
                 },
-                new AzureDevOpsBuild 
-                { 
-                    Id = 2, 
-                    BuildNumber = "1.0.2", 
-                    Status = "InProgress", 
+                new AzureDevOpsBuild
+                {
+                    Id = 2,
+                    BuildNumber = "1.0.2",
+                    Status = "InProgress",
                     Result = null,
                     StartTime = DateTime.UtcNow.AddMinutes(-30),
                     FinishTime = null,
                     SourceBranch = "refs/heads/feature/test",
                     SourceVersion = "def456",
-                    Url = "https://dev.azure.com/test-org/TestProject/_build/results?buildId=2"
+                    Url = "https://dev.azure.com/test-org/TestProject/_build/results?buildId=2",
+                    Tags = new[] { "development" }
                 }
             };
 
             _azureDevOpsService
                 .GetBuildsAsync(project, "test-org", "test-pat", pipelineId, count)
-                .Returns(expectedBuilds);
+                .Returns(Task.FromResult<IEnumerable<AzureDevOpsBuild>>(expectedBuilds));
 
             // Act
             var result = await _controller.GetBuilds(pipelineId, project, count);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var actualBuilds = Assert.IsAssignableFrom<IEnumerable<AzureDevOpsBuild>>(okResult.Value);
-            Assert.Equal(expectedBuilds.Count(), actualBuilds.Count());
-            Assert.Equal(expectedBuilds.First().Id, actualBuilds.First().Id);
-            Assert.Equal(expectedBuilds.First().BuildNumber, actualBuilds.First().BuildNumber);
+            var actualBuilds = Assert.IsAssignableFrom<IEnumerable<BuildDto>>(okResult.Value);
+            var buildsList = actualBuilds.ToList();
+            
+            Assert.Equal(expectedBuilds.Count(), buildsList.Count());
+            Assert.Equal(expectedBuilds.First().Id, buildsList.First().Id);
+            Assert.Equal(expectedBuilds.First().BuildNumber, buildsList.First().BuildNumber);
+            
+            // Verify tags are properly returned
+            Assert.Equal(expectedBuilds.First().Tags, buildsList.First().Tags);
+            Assert.Equal(2, buildsList.First().Tags.Length);
+            Assert.Contains("production", buildsList.First().Tags);
+            Assert.Contains("release", buildsList.First().Tags);
+            
+            Assert.Equal(expectedBuilds.Last().Tags, buildsList.Last().Tags);
+            Assert.Single(buildsList.Last().Tags);
+            Assert.Contains("development", buildsList.Last().Tags);
         }
 
         [Fact]
@@ -97,14 +111,14 @@ namespace AzDevOpsApi.Tests.Controllers
 
             _azureDevOpsService
                 .GetBuildsAsync(project, "test-org", "test-pat", pipelineId, defaultCount)
-                .Returns(expectedBuilds);
+                .Returns(Task.FromResult<IEnumerable<AzureDevOpsBuild>>(expectedBuilds));
 
             // Act
             var result = await _controller.GetBuilds(pipelineId, project);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var actualBuilds = Assert.IsAssignableFrom<IEnumerable<AzureDevOpsBuild>>(okResult.Value);
+            var actualBuilds = Assert.IsAssignableFrom<IEnumerable<BuildDto>>(okResult.Value);
             Assert.Single(actualBuilds);
             
             await _azureDevOpsService.Received(1)
@@ -139,7 +153,7 @@ namespace AzDevOpsApi.Tests.Controllers
             var expectedBuilds = new List<AzureDevOpsBuild>();
             _azureDevOpsService
                 .GetBuildsAsync(project, "test-org", "test-pat", pipelineId, 10)
-                .Returns(expectedBuilds);
+                .Returns(Task.FromResult<IEnumerable<AzureDevOpsBuild>>(expectedBuilds));
 
             // Act
             var result = await _controller.GetBuilds(pipelineId, project);
@@ -349,14 +363,14 @@ namespace AzDevOpsApi.Tests.Controllers
             
             _azureDevOpsService
                 .GetBuildsAsync(project, "test-org", "test-pat", pipelineId, 10)
-                .Returns(emptyBuilds);
+                .Returns(Task.FromResult<IEnumerable<AzureDevOpsBuild>>(emptyBuilds));
 
             // Act
             var result = await _controller.GetBuilds(pipelineId, project);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var actualBuilds = Assert.IsAssignableFrom<IEnumerable<AzureDevOpsBuild>>(okResult.Value);
+            var actualBuilds = Assert.IsAssignableFrom<IEnumerable<BuildDto>>(okResult.Value);
             Assert.Empty(actualBuilds);
         }
 
@@ -372,7 +386,7 @@ namespace AzDevOpsApi.Tests.Controllers
             
             _azureDevOpsService
                 .GetBuildsAsync(project, "test-org", "test-pat", pipelineId, largeCount)
-                .Returns(builds);
+                .Returns(Task.FromResult<IEnumerable<AzureDevOpsBuild>>(builds));
 
             // Act
             await _controller.GetBuilds(pipelineId, project, largeCount);
