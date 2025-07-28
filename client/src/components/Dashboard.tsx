@@ -139,15 +139,6 @@ const Dashboard: React.FC = () => {
     }
   }, [loadPipelineStatuses, filters.project]);
 
-  const handleOrganizationChange = (event: SelectChangeEvent<string>) => {
-    setFilters(prev => ({
-      ...prev,
-      organization: event.target.value,
-      project: '' // Reset project when organization changes
-    }));
-    setPipelineStatuses([]);
-  };
-
   const handleProjectChange = (event: SelectChangeEvent<string>) => {
     setFilters(prev => ({
       ...prev,

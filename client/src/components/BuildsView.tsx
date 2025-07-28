@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Container,
   Paper,
@@ -133,16 +133,14 @@ const BuildsView: React.FC = () => {
     loadPipelines();
   }, [organization, selectedProject]);
 
-  // Load timeline for a specific build
-  const loadBuildTimeline = async (build: Build) => {
+  // Load timeline for a specific build (memoized to avoid changing on every render)
+  const loadBuildTimeline = useCallback(async (build: Build) => {
     if (buildTimelines.has(build.id) || timelineLoading.has(build.id)) {
       return; // Already loaded or loading
     }
-    
     try {
       // Add to loading set
       setTimelineLoading(prev => new Set(prev).add(build.id));
-      
       console.log(`Loading timeline for build ${build.id}`);
       const timeline = await ApiService.getBuildTimeline(
         organization,
@@ -150,7 +148,6 @@ const BuildsView: React.FC = () => {
         build.id,
         'Stage' // Only fetch Stage records, we'll filter out skipped ones in the frontend
       );
-      
       if (timeline) {
         console.log(`Got timeline for build ${build.id}:`, timeline);
         setBuildTimelines(prev => new Map(prev).set(build.id, timeline));
@@ -167,7 +164,7 @@ const BuildsView: React.FC = () => {
         return newSet;
       });
     }
-  };
+  }, [buildTimelines, timelineLoading, organization, selectedProject]);
 
   // Load builds when pipeline changes
   useEffect(() => {
