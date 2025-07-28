@@ -11,6 +11,12 @@
 # production
 /build
 
+# playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
 # misc
 .DS_Store
 .env.local
