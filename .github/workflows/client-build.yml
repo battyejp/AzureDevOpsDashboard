@@ -81,11 +81,11 @@ jobs:
       if: always()
       with:
         name: ctrf-report
-        path: client/ctrf-report.json
+        path: ctrf/ctrf-report.json
         retention-days: 30
 
     - name: Publish Test Summary Results
-      run: npx github-actions-ctrf client/ctrf-report.json        
+      run: npx github-actions-ctrf ctrf/ctrf-report.json
 
     - name: Upload Test Results
       uses: actions/upload-artifact@v4
