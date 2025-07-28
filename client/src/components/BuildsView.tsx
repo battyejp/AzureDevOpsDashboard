@@ -20,6 +20,7 @@ import {
   Chip
 } from '@mui/material';
 import { ApiService } from '../services/apiService';
+import { ConfigService } from '../services/configService';
 import { Project, Pipeline, Build, BuildTimeline, TimelineRecord } from '../models/types';
 import { appConfig } from '../config/appConfig';
 
@@ -89,9 +90,13 @@ const BuildsView: React.FC = () => {
         const projectData = await ApiService.getProjects(organization);
         setProjects(projectData);
         
-        // Auto-select first project if available
+        // Auto-select default project from configuration, or first project if available
         if (projectData.length > 0) {
-          setSelectedProject(projectData[0].name);
+          const defaultProject = ConfigService.getDefaultProject();
+          const projectToSelect = defaultProject && projectData.find(p => p.name === defaultProject)
+            ? defaultProject
+            : projectData[0].name;
+          setSelectedProject(projectToSelect);
         }
       } catch (err) {
         setError('Failed to load projects');

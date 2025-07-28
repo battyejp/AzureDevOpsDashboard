@@ -13,6 +13,7 @@ import {
   SelectChangeEvent
 } from '@mui/material';
 import { ApiService } from '../services/apiService';
+import { ConfigService } from '../services/configService';
 import { Project, DeploymentEnvironment, DashboardFilters, PipelineStatus } from '../models/types';
 import PipelineStatusGrid from './PipelineStatusGrid';
 import { appConfig } from '../config/appConfig';
@@ -37,9 +38,13 @@ const Dashboard: React.FC = () => {
         const projectData = await ApiService.getProjects(filters.organization);
         setProjects(projectData);
         
-        // Auto-select first project if available
+        // Auto-select default project from configuration, or first project if available
         if (projectData.length > 0 && !filters.project) {
-          setFilters(prev => ({ ...prev, project: projectData[0].name }));
+          const defaultProject = ConfigService.getDefaultProject();
+          const projectToSelect = defaultProject && projectData.find(p => p.name === defaultProject)
+            ? defaultProject
+            : projectData[0].name;
+          setFilters(prev => ({ ...prev, project: projectToSelect }));
         }
       } catch (err) {
         setError('Failed to load projects');
