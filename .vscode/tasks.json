@@ -21,6 +21,60 @@
 				"cwd": "${workspaceFolder}/api/AzDevOpsApi"
 			},
 			"problemMatcher": []
+		},
+		{
+			"label": "Run Playwright Tests",
+			"type": "shell",
+			"command": "npm run test:e2e:smoke",
+			"group": "test",
+			"options": {
+				"cwd": "${workspaceFolder}/client"
+			},
+			"problemMatcher": [],
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
+			"label": "Run Visual Tests with Screenshots",
+			"type": "shell",
+			"command": "npm run test:e2e:smoke",
+			"group": "test",
+			"options": {
+				"cwd": "${workspaceFolder}/client"
+			},
+			"problemMatcher": [],
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
+			"label": "Build client with tests",
+			"type": "shell",
+			"command": "npm run build:with-tests",
+			"group": "build",
+			"options": {
+				"cwd": "${workspaceFolder}/client"
+			},
+			"problemMatcher": [],
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared",
+				"showReuseMessage": true,
+				"clear": false
+			}
 		}
 	]
 }

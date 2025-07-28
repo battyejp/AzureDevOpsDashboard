@@ -28,7 +28,15 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
+    "build:with-tests": "npm run build && npm run test:e2e:smoke",
     "test": "react-scripts test",
+    "test:e2e": "playwright test",
+    "test:e2e:smoke": "playwright test smoke.spec.ts",
+    "test:e2e:visual": "playwright test visual-smoke.spec.ts --reporter=list",
+    "test:e2e:screenshots": "npm run test:e2e:smoke && npm run test:e2e:visual",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:report": "playwright show-report",
     "eject": "react-scripts eject",
     "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "eslint src --ext .js,.jsx,.ts,.tsx --fix"
@@ -58,5 +66,8 @@
     "moduleNameMapper": {
       "^axios$": "axios/dist/node/axios.cjs"
     }
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.54.1"
   }
 }
