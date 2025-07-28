@@ -68,7 +68,7 @@ public class AzureDevOpsServicesTests : IDisposable
         SetupMockBuildsEndpoint(pipelineId, count);
         
         // Act
-        var response = await _azureDevOpsService.GetBuildsAsync(TestProject, TestOrganization, TestPat, pipelineId, count);
+        var response = await _azureDevOpsService.GetBuildsAsync(TestProject, TestOrganization, TestPat, pipelineId, count, "all", null, null);
 
         // Assert
         Assert.NotNull(response);
@@ -187,7 +187,7 @@ public class AzureDevOpsServicesTests : IDisposable
         
         // Act & Assert
         await Assert.ThrowsAsync<HttpRequestException>(async () =>
-            await _azureDevOpsService.GetBuildsAsync(TestProject, TestOrganization, TestPat, pipelineId, count));
+            await _azureDevOpsService.GetBuildsAsync(TestProject, TestOrganization, TestPat, pipelineId, count, "all", null, null));
     }
 
     [Fact]
@@ -282,7 +282,7 @@ public class AzureDevOpsServicesTests : IDisposable
         SetupMockEmptyBuildsEndpoint(pipelineId, count);
         
         // Act
-        var response = await _azureDevOpsService.GetBuildsAsync(TestProject, TestOrganization, TestPat, pipelineId, count);
+        var response = await _azureDevOpsService.GetBuildsAsync(TestProject, TestOrganization, TestPat, pipelineId, count, "all", null, null);
 
         // Assert
         Assert.NotNull(response);
@@ -326,9 +326,9 @@ public class AzureDevOpsServicesTests : IDisposable
         
         // Act & Assert
         var exception = await Assert.ThrowsAsync<HttpRequestException>(async () =>
-            await _azureDevOpsService.GetBuildsAsync(TestProject, TestOrganization, TestPat, pipelineId, count));
-        
-        Assert.Contains("401", exception.Message);
+            await _azureDevOpsService.GetBuildsAsync(TestProject, TestOrganization, TestPat, pipelineId, count, "all", null, null));
+        // Accept any message, just ensure it's an unauthorized error
+        Assert.True(exception.Message.Contains("401") || exception.StatusCode == System.Net.HttpStatusCode.Unauthorized || exception.Message.Contains("Unauthorized"), $"Expected unauthorized error, got: {exception.Message}");
     }
 
     [Fact]
@@ -507,13 +507,15 @@ public class AzureDevOpsServicesTests : IDisposable
             ]
         }";
 
+        var request = Request.Create()
+            .WithPath($"/{TestOrganization}/{TestProject}/_apis/build/builds")
+            .WithParam("definitions", pipelineId.ToString())
+            .WithParam("$top", count.ToString())
+            .WithParam("api-version", "7.1")
+            .WithParam("statusFilter", "all")
+            .WithParam("queryOrder", "startTimeDescending");
         _wireMockServer
-            .Given(Request.Create()
-                .WithPath($"/{TestOrganization}/{TestProject}/_apis/build/builds")
-                .WithParam("definitions", pipelineId.ToString())
-                .WithParam("$top", count.ToString())
-                .WithParam("api-version", "7.0")
-                .UsingGet())
+            .Given(request.UsingGet())
             .RespondWith(Response.Create()
                 .WithStatusCode(200)
                 .WithHeader("Content-Type", "application/json")
@@ -569,7 +571,7 @@ public class AzureDevOpsServicesTests : IDisposable
         _wireMockServer
             .Given(Request.Create()
                 .WithPath(path)
-                .WithParam("api-version", "7.0")
+                .WithParam("api-version", "7.1")
                 .UsingGet())
             .RespondWith(Response.Create()
                 .WithStatusCode(401)
@@ -1006,13 +1008,15 @@ public class AzureDevOpsServicesTests : IDisposable
             ""value"": []
         }";
 
+        var request = Request.Create()
+            .WithPath($"/{TestOrganization}/{TestProject}/_apis/build/builds")
+            .WithParam("definitions", pipelineId.ToString())
+            .WithParam("$top", count.ToString())
+            .WithParam("api-version", "7.1")
+            .WithParam("statusFilter", "all")
+            .WithParam("queryOrder", "startTimeDescending");
         _wireMockServer
-            .Given(Request.Create()
-                .WithPath($"/{TestOrganization}/{TestProject}/_apis/build/builds")
-                .WithParam("definitions", pipelineId.ToString())
-                .WithParam("$top", count.ToString())
-                .WithParam("api-version", "7.0")
-                .UsingGet())
+            .Given(request.UsingGet())
             .RespondWith(Response.Create()
                 .WithStatusCode(200)
                 .WithHeader("Content-Type", "application/json")

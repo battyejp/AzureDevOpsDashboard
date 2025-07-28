@@ -84,10 +84,7 @@ namespace AzDevOpsApi.Services
             }
         }
 
-        public async Task<IEnumerable<AzureDevOpsBuild>> GetBuildsAsync(string project, string organization, string pat, int pipelineId, int count, string statusFilter = "all")
-        {
-            return await GetBuildsAsync(project, organization, pat, pipelineId, count, statusFilter, null, null);
-        }
+
 
         public async Task<IEnumerable<AzureDevOpsBuild>> GetBuildsAsync(
             string project,
