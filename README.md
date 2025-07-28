@@ -189,8 +189,22 @@ The actual configuration files (without `.template`) are automatically ignored b
    .\start-dev.ps1
    ```
    
-   This script automatically starts both the API and React client.
-
+   ---
+   
+   **Or run the API and client separately:**
+   
+   **API (from the `api/AzDevOpsApi` directory):**
+   ```powershell
+   cd api/AzDevOpsApi
+   dotnet run
+   ```
+   
+   **Client (from the `client` directory):**
+   ```powershell
+   cd client
+   npm start
+   ```
+   
 4. **Access the application**
    - Frontend: http://localhost:3000
    - API: http://localhost:5031
@@ -267,15 +281,6 @@ For production:
 ## Development Utilities
 
 ### PowerShell Scripts
-
-- **Start Development**: `.\start-dev.ps1`
-  - Launches both the API and React client
-  - Opens browser with frontend URL
-
-- **Check Status**: `.\status-check.ps1`
-  - Verifies if services are running
-  - Tests API connectivity
-  - Shows port status
 
 - **Stop Development**: `.\stop-dev.ps1`
   - Gracefully shuts down API and client

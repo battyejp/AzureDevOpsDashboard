@@ -1,0 +1,33 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": ".NET Core Launch (API)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/api/AzDevOpsApi/bin/Debug/net8.0/AzDevOpsApi.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/api/AzDevOpsApi",
+      "stopAtEntry": false,
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "Now listening on: (https?://.*)"
+      },
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "sourceFileMap": {
+        "/Views": "${workspaceFolder}/api/AzDevOpsApi/Views"
+      }
+    },
+    {
+      "name": "Debug React Client",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}/client/src",
+      "cwd": "${workspaceFolder}/client"
+    }
+  ]
+}
