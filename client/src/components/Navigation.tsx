@@ -9,6 +9,7 @@ import {
 import { Link, useLocation } from 'react-router-dom';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import BuildIcon from '@mui/icons-material/Build';
+import SettingsIcon from '@mui/icons-material/Settings';
 
 const Navigation: React.FC = () => {
   const location = useLocation();
@@ -23,6 +24,11 @@ const Navigation: React.FC = () => {
       path: '/builds',
       label: 'Builds',
       icon: <BuildIcon sx={{ mr: 1 }} />
+    },
+    {
+      path: '/configuration',
+      label: 'Configuration',
+      icon: <SettingsIcon sx={{ mr: 1 }} />
     }
   ];
 

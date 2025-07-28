@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { Project, Pipeline, Build, DeploymentEnvironment, DeployedBuild, BuildTimeline } from '../models/types';
+import { MockApiService } from './mockApiService';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:5031/api' : '');
 
@@ -18,14 +19,62 @@ const apiClient = axios.create({
   },
 });
 
+// Flag to enable mock data when real API is unavailable
+const USE_MOCK_WHEN_UNAVAILABLE = true;
+
 export class ApiService {
+  static async testApiConnectivity(): Promise<boolean> {
+    try {
+      // Test basic connectivity to the API
+      const response = await apiClient.get('/projects', { timeout: 5000 });
+      return response.status === 200;
+    } catch (error: any) {
+      console.error('API connectivity test failed:', error);
+      console.log('Error details:', {
+        code: error.code,
+        message: error.message,
+        response: error.response,
+        status: error.response?.status
+      });
+      
+      // If mock data is enabled, return true so components can proceed and use mock data
+      if (USE_MOCK_WHEN_UNAVAILABLE) {
+        console.log('Real API unavailable, but mock data is available');
+        return true;
+      }
+      
+      return false;
+    }
+  }
+
   static async getProjects(organization: string): Promise<Project[]> {
     try {
       const response = await apiClient.get<Project[]>(`/projects`);
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching projects:', error);
-      throw new Error('Failed to fetch projects');
+      
+      // Use mock data if enabled and real API is unavailable
+      if (USE_MOCK_WHEN_UNAVAILABLE) {
+        console.log('Real API unavailable, using mock data for projects');
+        return MockApiService.getProjects(organization);
+      }
+      
+      // Provide more specific error messages
+      if (error.code === 'ECONNABORTED' || error.code === 'NETWORK_ERROR') {
+        throw new Error('Cannot connect to Azure DevOps API. Please check if the backend service is running.');
+      }
+      if (error.response?.status === 404) {
+        throw new Error('API endpoint not found. Please check the backend service configuration.');
+      }
+      if (error.response?.status >= 500) {
+        throw new Error('Azure DevOps API server error. Please try again later.');
+      }
+      if (!navigator.onLine) {
+        throw new Error('No internet connection. Please check your network.');
+      }
+      
+      throw new Error(`Failed to fetch projects: ${error.message || 'Unknown error'}`);
     }
   }
 
@@ -33,9 +82,30 @@ export class ApiService {
     try {
       const response = await apiClient.get<Pipeline[]>(`/pipelines?project=${encodeURIComponent(project)}`);
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching pipelines:', error);
-      throw new Error('Failed to fetch pipelines');
+      
+      // Use mock data if enabled and real API is unavailable
+      if (USE_MOCK_WHEN_UNAVAILABLE) {
+        console.log('Real API unavailable, using mock data for pipelines');
+        return MockApiService.getPipelines(organization, project);
+      }
+      
+      // Provide more specific error messages
+      if (error.code === 'ECONNABORTED' || error.code === 'NETWORK_ERROR') {
+        throw new Error('Cannot connect to Azure DevOps API. Please check if the backend service is running.');
+      }
+      if (error.response?.status === 404) {
+        throw new Error('Pipelines API endpoint not found. Please check the backend service configuration.');
+      }
+      if (error.response?.status >= 500) {
+        throw new Error('Azure DevOps API server error. Please try again later.');
+      }
+      if (!navigator.onLine) {
+        throw new Error('No internet connection. Please check your network.');
+      }
+      
+      throw new Error(`Failed to fetch pipelines: ${error.message || 'Unknown error'}`);
     }
   }
 
@@ -92,7 +162,28 @@ export class ApiService {
         status: error.response?.status,
         url: error.config?.url
       });
-      throw new Error(`Failed to fetch builds: ${error.message}`);
+      
+      // Use mock data if enabled and real API is unavailable
+      if (USE_MOCK_WHEN_UNAVAILABLE) {
+        console.log('Real API unavailable, using mock data for builds');
+        return MockApiService.getBuilds(organization, project, pipelineId, count, statusFilter, branch, reasonFilter);
+      }
+      
+      // Provide more specific error messages
+      if (error.code === 'ECONNABORTED' || error.code === 'NETWORK_ERROR') {
+        throw new Error('Cannot connect to Azure DevOps API. Please check if the backend service is running.');
+      }
+      if (error.response?.status === 404) {
+        throw new Error('Builds API endpoint not found. Please check the backend service configuration.');
+      }
+      if (error.response?.status >= 500) {
+        throw new Error('Azure DevOps API server error. Please try again later.');
+      }
+      if (!navigator.onLine) {
+        throw new Error('No internet connection. Please check your network.');
+      }
+      
+      throw new Error(`Failed to fetch builds: ${error.message || 'Unknown error'}`);
     }
   }
 
@@ -188,12 +279,25 @@ export class ApiService {
           return null;
         }
         
+        // Use mock data if enabled and real API is unavailable
+        if (USE_MOCK_WHEN_UNAVAILABLE) {
+          console.log('Real API unavailable, using mock data for deployed build');
+          return MockApiService.getLatestDeployedBuild(organization, project, pipelineId, environment);
+        }
+        
         // For other errors, log them and return null
         console.error('Error fetching latest deployed build:', error);
         return null;
       }
     } catch (error) {
       console.error('Error in getLatestDeployedBuild:', error);
+      
+      // Use mock data if enabled and real API is unavailable
+      if (USE_MOCK_WHEN_UNAVAILABLE) {
+        console.log('Real API unavailable, using mock data for deployed build (outer catch)');
+        return MockApiService.getLatestDeployedBuild(organization, project, pipelineId, environment);
+      }
+      
       return null;
     }
   }
@@ -236,6 +340,13 @@ export class ApiService {
       return response.data;
     } catch (error) {
       console.error('Error fetching build timeline:', error);
+      
+      // Use mock data if enabled and real API is unavailable
+      if (USE_MOCK_WHEN_UNAVAILABLE) {
+        console.log('Real API unavailable, using mock data for build timeline');
+        return MockApiService.getBuildTimeline(organization, project, buildId, type, state);
+      }
+      
       return null;
     }
   }
