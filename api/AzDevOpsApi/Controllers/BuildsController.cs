@@ -67,7 +67,7 @@ namespace AzDevOpsApi.Controllers
                     Url = build.Url,
                     SourceBranch = build.SourceBranch,
                     SourceVersion = build.SourceVersion,
-                    Reason = build.GetReasonDisplayName(),
+                    Reason = build.Reason.ToString(),
                     Tags = build.Tags
                 });
                 
