@@ -4,7 +4,7 @@
 
 /**
  * Extracts Jira issue key from build/release tags
- * Looks for tags matching the pattern 'Xen<number>' (e.g., 'Xen123', 'Xen456')
+ * Looks for tags matching the pattern 'Xen-<number>' (e.g., 'Xen-123', 'xen-456')
  * @param tags Array of tag strings
  * @returns Jira issue key if found, null otherwise
  */
@@ -13,8 +13,8 @@ export function extractJiraIssueKey(tags: string[]): string | null {
     return null;
   }
 
-  // Look for tags matching the pattern Xen<number>
-  const jiraPattern = /^Xen\d+$/i;
+  // Look for tags matching the pattern Xen-<number>
+  const jiraPattern = /^Xen-\d+$/i;
   
   for (const tag of tags) {
     if (jiraPattern.test(tag)) {

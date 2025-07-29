@@ -39,7 +39,7 @@ export const JiraStatus: React.FC<JiraStatusProps> = ({ build, jiraIssues, jiraL
     return <Typography variant="body2" color="text.secondary">Not found</Typography>;
   }
 
-  const isDone = isJiraStatusDone(jiraIssue.status);
+  const isDone = isJiraStatusDone(jiraIssue.fields.status);
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
       {isDone ? (
@@ -48,7 +48,7 @@ export const JiraStatus: React.FC<JiraStatusProps> = ({ build, jiraIssues, jiraL
         <HourglassBottomIcon sx={{ color: 'orange', fontSize: 20 }} />
       )}
       <Typography variant="body2" color="text.secondary">
-        {typeof jiraIssue.status === 'string' ? jiraIssue.status : jiraIssue.status.name}
+        {jiraIssue.fields.status.name}
       </Typography>
     </Box>
   );

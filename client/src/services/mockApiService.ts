@@ -263,7 +263,7 @@ export class MockApiService {
     await new Promise(resolve => setTimeout(resolve, 200));
     
     // Mock different responses based on issue key for testing
-    const issueNumber = parseInt(issueKey.replace(/^Xen/i, ''), 10);
+    const issueNumber = parseInt(issueKey.replace(/^Xen-/i, ''), 10);
     
     // Return null for some keys to simulate non-existent issues
     if (issueNumber % 23 === 0) {
@@ -298,11 +298,14 @@ export class MockApiService {
     }
     
     return {
+      id: `${issueNumber}`,
       key: issueKey,
-      status: { name: status },
-      summary: `Mock Jira issue: ${status === 'Done' ? 'Completed feature' : 'Feature development'} for ${issueKey}`,
-      assignee: assignee,
-      priority: priority
+      fields: {
+        status: { name: status },
+        summary: `Mock Jira issue: ${status === 'Done' ? 'Completed feature' : 'Feature development'} for ${issueKey}`,
+        assignee: assignee,
+        priority: priority
+      }
     };
   }
 }

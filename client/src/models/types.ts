@@ -107,9 +107,14 @@ export interface BuildTimeline {
 }
 
 export interface JiraIssue {
+  id: string;
   key: string;
-  status: { name: string };
-  summary?: string;
-  assignee?: string;
-  priority?: string;
+  fields: {
+    status: {
+      name: string;
+    };
+    summary?: string;
+    assignee?: string;
+    priority?: string;
+  };
 }

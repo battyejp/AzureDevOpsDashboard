@@ -3,15 +3,16 @@ import { extractJiraIssueKey, shouldShowJiraStatus, isJiraStatusDone } from './j
 describe('jiraUtils', () => {
   describe('extractJiraIssueKey', () => {
     it('should extract valid Jira issue key from tags', () => {
-      expect(extractJiraIssueKey(['Xen123', 'hotfix'])).toBe('Xen123');
-      expect(extractJiraIssueKey(['hotfix', 'Xen456'])).toBe('Xen456');
-      expect(extractJiraIssueKey(['XEN789'])).toBe('XEN789');
+      expect(extractJiraIssueKey(['Xen-123', 'hotfix'])).toBe('Xen-123');
+      expect(extractJiraIssueKey(['hotfix', 'Xen-456'])).toBe('Xen-456');
+      expect(extractJiraIssueKey(['XEN-789'])).toBe('XEN-789');
     });
 
     it('should return null for invalid tags', () => {
       expect(extractJiraIssueKey(['hotfix', 'feature'])).toBeNull();
       expect(extractJiraIssueKey(['Xenomorphs', 'Xen'])).toBeNull();
       expect(extractJiraIssueKey(['Xen'])).toBeNull();
+      expect(extractJiraIssueKey(['Xen123'])).toBeNull(); // Old format without hyphen
       expect(extractJiraIssueKey([])).toBeNull();
     });
 
@@ -22,8 +23,8 @@ describe('jiraUtils', () => {
 
   describe('shouldShowJiraStatus', () => {
     it('should return true when Jira issue key exists', () => {
-      expect(shouldShowJiraStatus(['Xen123', 'hotfix'])).toBe(true);
-      expect(shouldShowJiraStatus(['hotfix', 'Xen456'])).toBe(true);
+      expect(shouldShowJiraStatus(['Xen-123', 'hotfix'])).toBe(true);
+      expect(shouldShowJiraStatus(['hotfix', 'Xen-456'])).toBe(true);
     });
 
     it('should return false when no Jira issue key exists', () => {
