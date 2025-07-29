@@ -7,6 +7,9 @@
 
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    
+    <!-- Exclude Program.cs from code coverage as it's startup code -->
+    <ExcludeFromCodeCoverage>**/Program.cs</ExcludeFromCodeCoverage>
   </PropertyGroup>
 
   <ItemGroup>
