@@ -1,51 +1,32 @@
-# Azure DevOps Dashb### Installation
+# Azure DevOps Dashboard
 
-``## Available Scripts
+Azure DevOps Dashboard is a modern web application for visualizing and monitoring Azure DevOps pipelines, builds, and deployments. It provides a unified view of your DevOps activity, making it easy to track build health, deployment status, and project configuration.
 
-### `npm st**Note: this is a one-way operation. Once you `eject`, you can't go back!**rt`
+---
 
-Runs the app in development mode with hot reloading.
+## UI Overview
 
-### `npm test`
+The dashboard features three main views, accessible from the navigation bar:
 
-Launches the test runner in interactive watch mode.
+### 1. Deployments View
+- **Purpose:** See the latest deployment status for each pipeline and environment.
+- **Features:** Color-coded status, quick links to build results, and deployment history.
 
-### `npm run test:e2e`
+![Deployments View Screenshot](screenshots\deployments-view.png)
 
-Runs Playwright end-to-end tests in all browsers.
+### 2. Builds View
+- **Purpose:** Browse recent builds for all pipelines, filter by project, branch, or status.
+- **Features:** Build numbers, status, timestamps, and direct links to Azure DevOps.
 
-### `npm run test:e2e:smoke`
+![Builds View Screenshot](screenshots/builds-view.png)
 
-Runs basic smoke tests using Playwright (faster, good for CI).
+### 3. Configuration View
+- **Purpose:** Select which projects and pipelines appear in your dashboard.
+- **Features:** Enable/disable projects and pipelines, filter by environment, and save preferences locally.
 
-### `npm run test:e2e:ui`
+![Configuration View Screenshot](screenshots/configuration-view.png)
 
-Runs Playwright tests with UI mode for debugging.
-
-### `npm run build:with-tests`
-
-Builds the app for production and runs smoke tests.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder, optimized for performance.
-
-### `npm run eject`endencies
-npm install
-
-# Start development server
-npm start
-```act Client
-
-The frontend UI for the Azure DevOps Dashboard project, built with React, TypeScript, and Material-UI.
-
-## Features
-
-- **Modern UI**: Built with Material-UI components for a clean, responsive interface
-- **TypeScript**: Full type safety and improved developer experience
-- **API Integration**: Connects to ASP.NET Core backend for Azure DevOps data
-- **Real-time Updates**: Configurable refresh interval for pipeline status
-- **Filters**: Filter pipelines by project and environment
+---
 
 ## Getting Started
 
@@ -53,98 +34,74 @@ The frontend UI for the Azure DevOps Dashboard project, built with React, TypeSc
 
 - Node.js 18+
 - npm or yarn
-- API server running at http://localhost:5031 (or configured API URL)
+- (Optional) .NET 6+ SDK for running the API backend
 
-### Installation
+### Ways to Run the UI and API
 
-\\\ash
-# Install dependencies
-npm install
+#### 1. Using npm/yarn (local development)
 
-# Start development server
-npm start
-\\\
+- **Start the client (mock API):**
+  ```bash
+  npm install
+  npm start
+  ```
+  The UI will use mock data (no backend required).
 
-The application will be available at http://localhost:3000.
+- **Start the client (real API):**
+  ```bash
+  REACT_APP_API_URL=http://localhost:5031/api npm start
+  ```
+  The UI will connect to your running API backend.
 
-## Available Scripts
+- **Start the API backend:**
+  ```bash
+  cd ../api/AzDevOpsApi
+  dotnet run
+  ```
 
-### \
-pm start\
+#### 2. Using Visual Studio Code Tasks
 
-Runs the app in development mode with hot reloading.
+- Open the Command Palette (`Ctrl+Shift+P` or `F1`).
+- Select `Tasks: Run Task`.
+- Choose:
+  - `Start client (mock API)` for mock mode.
+  - `Start client (real API)` to connect to the backend.
+  - `Start API` to run the backend.
 
-### \
-pm test\
+#### 3. Using Docker
 
-Launches the test runner in interactive watch mode.
+- **Start everything with Docker Compose:**
+  ```bash
+  docker-compose up --build
+  ```
+  This will build and run both the client and API in containers.
 
-### \
-pm run build\
-
-Builds the app for production to the \uild\ folder, optimized for performance.
-
-### \
-pm run eject\
-
-**Note: this is a one-way operation. Once you \ject\, you can't go back!**
-
-If you need to customize the build configuration, you can eject from Create React App.
+---
 
 ## Project Structure
 
 ```
 client/
- ├── public/                # Static files
+ ├── public/                # Static files (add screenshots here)
  ├── src/
  │   ├── components/        # UI components
- │   │   ├── Dashboard/     # Dashboard layout components
- │   │   ├── Filters/       # Filter components
- │   │   └── StatusGrid/    # Build status grid components
  │   ├── models/            # TypeScript interfaces
  │   ├── services/          # API services
  │   ├── App.tsx            # Main application component
  │   └── index.tsx          # Entry point
  ├── package.json           # Dependencies and scripts
  └── tsconfig.json          # TypeScript configuration
+api/
+ └── AzDevOpsApi/           # .NET backend
 ```
 
-## Testing
-
-The application includes comprehensive end-to-end testing using Playwright with mock data.
-
-### Running Tests
-
-```bash
-# Run all Playwright tests
-npm run test:e2e
-
-# Run smoke tests (recommended for CI/local dev)
-npm run test:e2e:smoke
-
-# Run tests with visual debugging
-npm run test:e2e:ui
-
-# Build and test together
-npm run build:with-tests
-```
-
-### Test Features
-
-- **Mock API Responses**: Tests use comprehensive mock data, no backend required
-- **Cross-browser Testing**: Tests run on Chrome, Firefox, and Safari
-- **Multiple Test Suites**: Smoke tests, navigation tests, form validation tests
-- **CI/CD Integration**: Smoke tests run automatically in GitHub Actions
-
-See [TESTING.md](./TESTING.md) for detailed testing documentation.
-
-## Docker Support
-
-This application is containerized using the `Dockerfile` in this directory. 
-When deployed with Docker Compose, Nginx serves the static build and proxies API requests.
+---
 
 ## Learn More
 
 - [React Documentation](https://reactjs.org/)
 - [TypeScript Documentation](https://www.typescriptlang.org/)
 - [Material-UI Documentation](https://mui.com/)
+- [Azure DevOps REST API](https://learn.microsoft.com/en-us/rest/api/azure/devops/)
+
+---

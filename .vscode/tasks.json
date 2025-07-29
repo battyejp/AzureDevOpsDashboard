@@ -2,7 +2,7 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "Start client",
+			"label": "Start client (mock API)",
 			"type": "shell",
 			"command": "cd client && npm start",
 			"group": "build",
@@ -10,6 +10,21 @@
 			"problemMatcher": [
 				"$tsc"
 			]
+		},
+		{
+			"label": "Start client (real API)",
+			"type": "shell",
+			"command": "cd client && npm start",
+			"group": "build",
+			"isBackground": true,
+			"problemMatcher": [
+				"$tsc"
+			],
+			"options": {
+				"env": {
+					"REACT_APP_API_URL": "http://localhost:5031/api"
+				}
+			}
 		},
 		{
 			"label": "Start API",
@@ -41,10 +56,10 @@
 			}
 		},
 		{
-			"label": "Run Visual Tests with Screenshots",
+			"label": "Build client with tests",
 			"type": "shell",
-			"command": "npm run test:e2e:smoke",
-			"group": "test",
+			"command": "npm run build:with-tests",
+			"group": "build",
 			"options": {
 				"cwd": "${workspaceFolder}/client"
 			},
@@ -59,12 +74,12 @@
 			}
 		},
 		{
-			"label": "Build client with tests",
+			"label": "Build and Test API",
 			"type": "shell",
-			"command": "npm run build:with-tests",
-			"group": "build",
+			"command": "dotnet build && dotnet test",
+			"group": "test",
 			"options": {
-				"cwd": "${workspaceFolder}/client"
+				"cwd": "${workspaceFolder}/api/AzDevOpsApi"
 			},
 			"problemMatcher": [],
 			"presentation": {
