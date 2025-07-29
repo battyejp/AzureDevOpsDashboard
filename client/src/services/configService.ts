@@ -5,6 +5,7 @@
 
 export interface UserConfig {
   defaultProject?: string;
+  pipelineFilters?: { [projectName: string]: number[] };
 }
 
 const CONFIG_KEY = 'azureDevOpsDashboard_config';
@@ -62,5 +63,48 @@ export class ConfigService {
     } catch (error) {
       console.error('Error clearing configuration from localStorage:', error);
     }
+  }
+
+  /**
+   * Get pipeline filters for a specific project
+   */
+  static getPipelineFilters(projectName: string): number[] | undefined {
+    const config = this.getConfig();
+    return config.pipelineFilters?.[projectName];
+  }
+
+  /**
+   * Set pipeline filters for a specific project
+   */
+  static setPipelineFilters(projectName: string, pipelineIds: number[]): void {
+    const config = this.getConfig();
+    if (!config.pipelineFilters) {
+      config.pipelineFilters = {};
+    }
+    config.pipelineFilters[projectName] = pipelineIds;
+    this.saveConfig(config);
+  }
+
+  /**
+   * Clear pipeline filters for a specific project
+   */
+  static clearPipelineFilters(projectName: string): void {
+    const config = this.getConfig();
+    if (config.pipelineFilters && config.pipelineFilters[projectName]) {
+      delete config.pipelineFilters[projectName];
+      this.saveConfig(config);
+    }
+  }
+
+  /**
+   * Check if a pipeline should be visible based on configuration
+   * If no filter is configured, all pipelines are visible
+   */
+  static isPipelineVisible(projectName: string, pipelineId: number): boolean {
+    const filters = this.getPipelineFilters(projectName);
+    if (!filters || filters.length === 0) {
+      return true; // No filter means show all
+    }
+    return filters.includes(pipelineId);
   }
 }
