@@ -29,6 +29,33 @@ export class MockApiService {
       state: 'wellFormed',
       visibility: 'private',
       lastUpdateTime: '2024-01-13T09:15:00Z'
+    },
+    {
+      id: '22222222-3333-4444-5555-666666666666',
+      name: 'Customer Portal',
+      description: 'Customer-facing web portal and API services',
+      url: 'https://dev.azure.com/mockorg/Customer%20Portal',
+      state: 'wellFormed',
+      visibility: 'private',
+      lastUpdateTime: '2024-01-16T14:20:00Z'
+    },
+    {
+      id: '33333333-4444-5555-6666-777777777777',
+      name: 'DevOps Infrastructure',
+      description: 'Infrastructure as Code and DevOps automation tools',
+      url: 'https://dev.azure.com/mockorg/DevOps%20Infrastructure',
+      state: 'wellFormed',
+      visibility: 'private',
+      lastUpdateTime: '2024-01-17T08:45:00Z'
+    },
+    {
+      id: '44444444-5555-6666-7777-888888888888',
+      name: 'Reporting Services',
+      description: 'Business intelligence and reporting platform',
+      url: 'https://dev.azure.com/mockorg/Reporting%20Services',
+      state: 'wellFormed',
+      visibility: 'private',
+      lastUpdateTime: '2024-01-18T11:30:00Z'
     }
   ];
 
@@ -51,6 +78,18 @@ export class MockApiService {
         name: 'Database Migration',
         url: 'https://dev.azure.com/mockorg/E-Commerce%20Platform/_build?definitionId=1003',
         queueStatus: 'enabled'
+      },
+      {
+        id: 1004,
+        name: 'Product Catalog Service',
+        url: 'https://dev.azure.com/mockorg/E-Commerce%20Platform/_build?definitionId=1004',
+        queueStatus: 'enabled'
+      },
+      {
+        id: 1005,
+        name: 'Shopping Cart Service',
+        url: 'https://dev.azure.com/mockorg/E-Commerce%20Platform/_build?definitionId=1005',
+        queueStatus: 'enabled'
       }
     ],
     'Mobile App Backend': [
@@ -64,6 +103,18 @@ export class MockApiService {
         id: 2002,
         name: 'Payment Service API',
         url: 'https://dev.azure.com/mockorg/Mobile%20App%20Backend/_build?definitionId=2002',
+        queueStatus: 'enabled'
+      },
+      {
+        id: 2003,
+        name: 'Notification Service',
+        url: 'https://dev.azure.com/mockorg/Mobile%20App%20Backend/_build?definitionId=2003',
+        queueStatus: 'enabled'
+      },
+      {
+        id: 2004,
+        name: 'Authentication Service',
+        url: 'https://dev.azure.com/mockorg/Mobile%20App%20Backend/_build?definitionId=2004',
         queueStatus: 'enabled'
       }
     ],
@@ -79,6 +130,96 @@ export class MockApiService {
         name: 'ML Model Training',
         url: 'https://dev.azure.com/mockorg/Data%20Analytics%20Pipeline/_build?definitionId=3002',
         queueStatus: 'enabled'
+      },
+      {
+        id: 3003,
+        name: 'Data Warehouse Sync',
+        url: 'https://dev.azure.com/mockorg/Data%20Analytics%20Pipeline/_build?definitionId=3003',
+        queueStatus: 'enabled'
+      },
+      {
+        id: 3004,
+        name: 'Reporting Dashboard',
+        url: 'https://dev.azure.com/mockorg/Data%20Analytics%20Pipeline/_build?definitionId=3004',
+        queueStatus: 'enabled'
+      }
+    ],
+    'Customer Portal': [
+      {
+        id: 4001,
+        name: 'Portal Frontend',
+        url: 'https://dev.azure.com/mockorg/Customer%20Portal/_build?definitionId=4001',
+        queueStatus: 'enabled'
+      },
+      {
+        id: 4002,
+        name: 'Customer API Gateway',
+        url: 'https://dev.azure.com/mockorg/Customer%20Portal/_build?definitionId=4002',
+        queueStatus: 'enabled'
+      },
+      {
+        id: 4003,
+        name: 'Support Ticket System',
+        url: 'https://dev.azure.com/mockorg/Customer%20Portal/_build?definitionId=4003',
+        queueStatus: 'enabled'
+      },
+      {
+        id: 4004,
+        name: 'Knowledge Base Service',
+        url: 'https://dev.azure.com/mockorg/Customer%20Portal/_build?definitionId=4004',
+        queueStatus: 'enabled'
+      },
+      {
+        id: 4005,
+        name: 'Live Chat Integration',
+        url: 'https://dev.azure.com/mockorg/Customer%20Portal/_build?definitionId=4005',
+        queueStatus: 'enabled'
+      }
+    ],
+    'DevOps Infrastructure': [
+      {
+        id: 5001,
+        name: 'Terraform Infrastructure',
+        url: 'https://dev.azure.com/mockorg/DevOps%20Infrastructure/_build?definitionId=5001',
+        queueStatus: 'enabled'
+      },
+      {
+        id: 5002,
+        name: 'Monitoring Setup',
+        url: 'https://dev.azure.com/mockorg/DevOps%20Infrastructure/_build?definitionId=5002',
+        queueStatus: 'enabled'
+      },
+      {
+        id: 5003,
+        name: 'Security Scanning',
+        url: 'https://dev.azure.com/mockorg/DevOps%20Infrastructure/_build?definitionId=5003',
+        queueStatus: 'enabled'
+      },
+      {
+        id: 5004,
+        name: 'Backup & Recovery',
+        url: 'https://dev.azure.com/mockorg/DevOps%20Infrastructure/_build?definitionId=5004',
+        queueStatus: 'enabled'
+      }
+    ],
+    'Reporting Services': [
+      {
+        id: 6001,
+        name: 'PowerBI Integration',
+        url: 'https://dev.azure.com/mockorg/Reporting%20Services/_build?definitionId=6001',
+        queueStatus: 'enabled'
+      },
+      {
+        id: 6002,
+        name: 'Report Generation Engine',
+        url: 'https://dev.azure.com/mockorg/Reporting%20Services/_build?definitionId=6002',
+        queueStatus: 'enabled'
+      },
+      {
+        id: 6003,
+        name: 'Data Export Service',
+        url: 'https://dev.azure.com/mockorg/Reporting%20Services/_build?definitionId=6003',
+        queueStatus: 'enabled'
       }
     ]
   };
@@ -92,13 +233,31 @@ export class MockApiService {
       const startTime = new Date(buildDate.getTime() + (10 * 60 * 1000)); // start 10 min after queue
       const finishTime = new Date(startTime.getTime() + (Math.random() * 20 + 5) * 60 * 1000); // 5-25 min duration
       
-      // Vary the results for realistic data
-      const results = ['succeeded', 'failed', 'partiallySucceeded'];
-      const reasons = ['IndividualCI', 'Manual'];
-      const branches = ['refs/heads/main', 'refs/heads/develop'];
+      // More varied results for realistic data - note that actual result assignment is done below
+      const reasons = ['IndividualCI', 'Manual', 'Scheduled', 'PullRequest', 'BatchedCI'];
+      // More diverse branch patterns
+      const branches = [
+        'refs/heads/main', 
+        'refs/heads/develop', 
+        'refs/heads/feature/payment-integration',
+        'refs/heads/feature/user-authentication',
+        'refs/heads/hotfix/security-patch',
+        'refs/heads/release/2024.1',
+        'refs/heads/feature/mobile-api',
+        'refs/heads/bugfix/data-validation'
+      ];
       
       const status = i === 0 && Math.random() > 0.7 ? 'inProgress' : 'completed';
-      const result = status === 'inProgress' ? undefined : results[Math.floor(Math.random() * results.length)];
+      // Better distribution of results - more successes, some failures
+      let result: string | undefined;
+      if (status === 'inProgress') {
+        result = undefined;
+      } else {
+        const rand = Math.random();
+        if (rand < 0.75) result = 'succeeded';        // 75% success rate
+        else if (rand < 0.9) result = 'partiallySucceeded'; // 15% partial
+        else result = 'failed';                        // 10% failure
+      }
       
       builds.push({
         id: 10000 + pipelineId * 100 + i,
@@ -127,15 +286,23 @@ export class MockApiService {
   }
 
   private static generateMockDeployedBuild(pipelineId: number, environment: DeploymentEnvironment): DeployedBuild | null {
-    // Some pipelines don't have deployments to all environments
-    if (Math.random() > 0.8) return null;
+    // Ensure much better deployment coverage - only 20% chance of no deployment instead of 80%
+    // Different pipelines have different deployment patterns
+    const deploymentChance = this.getDeploymentChance(pipelineId, environment);
+    
+    if (Math.random() > deploymentChance) return null;
     
     const now = new Date();
     const deployDate = new Date(now.getTime() - (Math.random() * 24 * 60 * 60 * 1000)); // Within last 24 hours
     const finishTime = new Date(deployDate.getTime() + (Math.random() * 15 + 5) * 60 * 1000); // 5-20 min deploy time
     
     const results = ['succeeded', 'failed', 'partiallySucceeded'];
-    const result = results[Math.floor(Math.random() * results.length)];
+    // Better success rate for deployments - using explicit logic instead of array
+    const rand = Math.random();
+    let result: string;
+    if (rand < 0.85) result = results[0];        // 85% success rate
+    else if (rand < 0.95) result = results[2]; // 10% partial
+    else result = results[1];                        // 5% failure
     
     return {
       id: 20000 + pipelineId * 10 + environment,
@@ -150,22 +317,47 @@ export class MockApiService {
     };
   }
 
+  private static getDeploymentChance(pipelineId: number, environment: DeploymentEnvironment): number {
+    // Different deployment patterns based on pipeline type and environment
+    // Infrastructure and critical services deploy to all environments
+    // Some services might not deploy to production yet
+    
+    switch (environment) {
+      case DeploymentEnvironment.Dev:
+        return 0.95; // 95% of pipelines deploy to Dev
+      case DeploymentEnvironment.SIT:
+        return 0.85; // 85% deploy to SIT  
+      case DeploymentEnvironment.UAT:
+        return 0.75; // 75% deploy to UAT
+      case DeploymentEnvironment.PPD:
+        return 0.65; // 65% deploy to Pre-Prod
+      case DeploymentEnvironment.Prod:
+        // Production deployments vary by pipeline type
+        // Infrastructure and core services more likely to be in prod
+        if (pipelineId >= 5000) return 0.8; // Infrastructure pipelines
+        if (pipelineId >= 1000 && pipelineId < 2000) return 0.7; // E-commerce platform  
+        return 0.5; // Other services 50% chance
+      default:
+        return 0.8;
+    }
+  }
+
   private static generateMockTimeline(buildId: number): BuildTimeline {
-    const stages = [
-      'Build',
-      'Test',
-      'Code Analysis',
-      'Package',
-      'Deploy to Dev',
-      'Integration Tests',
-      'Deploy to Staging'
+    // More varied stages based on build type
+    const stageVariations = [
+      ['Build', 'Test', 'Code Analysis', 'Package', 'Deploy to Dev'],
+      ['Build', 'Unit Tests', 'Integration Tests', 'Code Analysis', 'Package', 'Deploy to Dev', 'Smoke Tests'],
+      ['Build', 'Test', 'Security Scan', 'Package', 'Deploy to Dev', 'Integration Tests'],
+      ['Build', 'Test', 'Code Analysis', 'Package', 'Deploy to Dev', 'Deploy to Staging', 'End-to-End Tests'],
+      ['Restore', 'Build', 'Test', 'Code Analysis', 'Package', 'Publish Artifacts', 'Deploy to Dev']
     ];
+    
+    const stages = stageVariations[buildId % stageVariations.length];
     
     const records: TimelineRecord[] = [];
     let currentTime = new Date();
     
     const results = ['succeeded', 'failed', 'skipped'];
-    const availableResults = results; // Use the array for selection logic
     
     stages.forEach((stageName, index) => {
       const startTime = new Date(currentTime.getTime() + (index * 2 * 60 * 1000)); // 2 min apart
@@ -173,9 +365,11 @@ export class MockApiService {
       const finishTime = new Date(startTime.getTime() + (duration * 60 * 1000));
       
       // Most stages succeed, some might be skipped, rarely failed
-      let result = availableResults[0]; // Start with 'succeeded'
-      if (Math.random() > 0.9) result = availableResults[2]; // 'skipped'
-      else if (Math.random() > 0.95) result = availableResults[1]; // 'failed'
+      // Better distribution with more successes
+      let result = results[0]; // Start with 'succeeded'
+      const rand = Math.random();
+      if (rand > 0.95) result = results[1]; // 5% 'failed'
+      else if (rand > 0.85) result = results[2]; // 10% 'skipped'
       
       records.push({
         id: `stage-${index}`,
