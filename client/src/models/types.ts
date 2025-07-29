@@ -105,3 +105,11 @@ export interface BuildTimeline {
   id: string;
   records: TimelineRecord[];
 }
+
+export interface JiraIssue {
+  key: string;
+  status: string;
+  summary?: string;
+  assignee?: string;
+  priority?: string;
+}

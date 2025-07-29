@@ -1,4 +1,4 @@
-import { Project, Pipeline, Build, DeploymentEnvironment, DeployedBuild, BuildTimeline, TimelineRecord } from '../models/types';
+import { Project, Pipeline, Build, DeploymentEnvironment, DeployedBuild, BuildTimeline, TimelineRecord, JiraIssue } from '../models/types';
 
 // Mock data to demonstrate the application functionality
 export class MockApiService {
@@ -111,7 +111,7 @@ export class MockApiService {
         url: `https://dev.azure.com/mockorg/_build/results?buildId=${10000 + pipelineId * 100 + i}`,
         sourceBranch: branches[Math.floor(Math.random() * branches.length)],
         reason: reasons[Math.floor(Math.random() * reasons.length)],
-        tags: Math.random() > 0.8 ? ['hotfix'] : [],
+        tags: Math.random() > 0.8 ? ['hotfix'] : Math.random() > 0.4 ? [`Xen${Math.floor(Math.random() * 200) + 100}`] : [],
         definition: {
           id: pipelineId,
           name: `Pipeline ${pipelineId}`
@@ -256,5 +256,53 @@ export class MockApiService {
     // Mock always returns true for connectivity
     await new Promise(resolve => setTimeout(resolve, 100));
     return true;
+  }
+
+  static async getJiraIssue(issueKey: string): Promise<JiraIssue | null> {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
+    // Mock different responses based on issue key for testing
+    const issueNumber = parseInt(issueKey.replace(/^Xen/i, ''), 10);
+    
+    // Return null for some keys to simulate non-existent issues
+    if (issueNumber % 23 === 0) {
+      return null;
+    }
+    
+    // Determine status based on issue number - ensuring good variety for demo
+    let status: string;
+    let priority: string;
+    let assignee: string;
+    
+    if (issueNumber % 5 === 0) {
+      status = 'Done';
+      priority = 'High';
+      assignee = 'John Doe';
+    } else if (issueNumber % 3 === 0) {
+      status = 'In Progress';
+      priority = 'Medium';
+      assignee = 'Jane Smith';
+    } else if (issueNumber % 7 === 0) {
+      status = 'In Review';
+      priority = 'Low';
+      assignee = 'Bob Wilson';
+    } else if (issueNumber % 11 === 0) {
+      status = 'Ready for Test';
+      priority = 'High';
+      assignee = 'Alice Brown';
+    } else {
+      status = 'To Do';
+      priority = 'Medium';
+      assignee = 'Charlie Davis';
+    }
+    
+    return {
+      key: issueKey,
+      status: status,
+      summary: `Mock Jira issue: ${status === 'Done' ? 'Completed feature' : 'Feature development'} for ${issueKey}`,
+      assignee: assignee,
+      priority: priority
+    };
   }
 }
