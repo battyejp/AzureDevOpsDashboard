@@ -6,6 +6,7 @@ import { Box } from '@mui/material';
 import Navigation from './components/Navigation';
 import Dashboard from './components/Dashboard';
 import BuildsView from './components/BuildsView';
+import ReleaseView from './components/ReleaseView';
 import Configuration from './components/Configuration';
 
 const theme = createTheme({
@@ -31,6 +32,7 @@ function App() {
             <Routes>
               <Route path="/deployments" element={<Dashboard />} />
               <Route path="/builds" element={<BuildsView />} />
+              <Route path="/release" element={<ReleaseView />} />
               <Route path="/configuration" element={<Configuration />} />
               <Route path="/" element={<Navigate to="/deployments" replace />} />
             </Routes>
