@@ -16,9 +16,9 @@ import {
   TableCell,
   TableContainer,
   TableHead,
-  TableRow
+  TableRow,
+  Chip
 } from '@mui/material';
-import { XenTagChip } from './XenTagChip';
 import { ApiService } from '../services/apiService';
 import { ConfigService } from '../services/configService';
 import { Project, Pipeline, Build, BuildTimeline, TimelineRecord } from '../models/types';
@@ -356,13 +356,7 @@ const ReleaseView: React.FC = () => {
                   const projectName = build.project?.name || selectedProject;
                   const orgName = organization;
                   const buildUrl = `https://dev.azure.com/${encodeURIComponent(orgName)}/${encodeURIComponent(projectName)}/_build/results?buildId=${build.id}&view=results`;
-                  
-                  // Find the first tag matching Xen-<digits>
-                  let xenTag: string | null = null;
-                  if (build.tags && build.tags.length > 0) {
-                    const found = build.tags.find(tag => /^Xen-\d+$/i.test(tag));
-                    xenTag = found ? found : null;
-                  }
+
 
                   return (
                     <TableRow
@@ -430,7 +424,13 @@ const ReleaseView: React.FC = () => {
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                           {build.tags && build.tags.length > 0 ? (
                             build.tags.map((tag, index) => (
-                              <XenTagChip tag={tag} index={index} key={index} />
+                              <Chip
+                                key={index}
+                                label={tag}
+                                size="small"
+                                variant="outlined"
+                                sx={{ fontSize: '0.75rem' }}
+                              />
                             ))
                           ) : (
                             <Typography variant="body2" color="text.secondary">
