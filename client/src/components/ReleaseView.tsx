@@ -10,22 +10,15 @@ import {
   Box,
   Alert,
   CircularProgress,
-  SelectChangeEvent,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Chip
+  SelectChangeEvent
 } from '@mui/material';
 import { ApiService } from '../services/apiService';
 import { ConfigService } from '../services/configService';
-import { Project, Pipeline, Build, BuildTimeline, TimelineRecord } from '../models/types';
+import { Project, Pipeline, Build, BuildTimeline } from '../models/types';
 import { appConfig } from '../config/appConfig';
 import { extractJiraIssueKey } from '../utils/jiraUtils';
 import { useJira } from '../hooks/useJira';
-import { JiraStatus } from './JiraStatus';
+import { BuildsTable } from './BuildsTable';
 
 const ReleaseView: React.FC = () => {
   const [organization] = useState<string>(appConfig.azureDevOpsOrganization);
@@ -39,6 +32,39 @@ const ReleaseView: React.FC = () => {
 
   // Use shared Jira hook
   const { jiraIssues, jiraLoading, loadJiraIssue } = useJira();
+
+  // Load timeline for a specific build (memoized to avoid changing on every render)
+  const loadBuildTimeline = useCallback(async (build: Build) => {
+    if (buildTimelines.has(build.id) || timelineLoading.has(build.id)) {
+      return; // Already loaded or loading
+    }
+    try {
+      // Add to loading set
+      setTimelineLoading(prev => new Set(prev).add(build.id));
+      console.log(`Loading timeline for build ${build.id}`);
+      const timeline = await ApiService.getBuildTimeline(
+        organization,
+        selectedProject,
+        build.id,
+        'Stage' // Only fetch Stage records, we'll filter out skipped ones in the frontend
+      );
+      if (timeline) {
+        console.log(`Got timeline for build ${build.id}:`, timeline);
+        setBuildTimelines(prev => new Map(prev).set(build.id, timeline));
+      } else {
+        console.log(`No timeline data for build ${build.id}`);
+      }
+    } catch (err) {
+      console.error(`Error loading timeline for build ${build.id}:`, err);
+    } finally {
+      // Remove from loading set
+      setTimelineLoading(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(build.id);
+        return newSet;
+      });
+    }
+  }, [buildTimelines, timelineLoading, organization, selectedProject]);
 
   // Load projects on component mount
   useEffect(() => {
@@ -142,39 +168,6 @@ const ReleaseView: React.FC = () => {
     loadPipelineBuilds();
   }, [organization, selectedProject]);
 
-  // Load timeline for a specific build (memoized to avoid changing on every render)
-  const loadBuildTimeline = useCallback(async (build: Build) => {
-    if (buildTimelines.has(build.id) || timelineLoading.has(build.id)) {
-      return; // Already loaded or loading
-    }
-    try {
-      // Add to loading set
-      setTimelineLoading(prev => new Set(prev).add(build.id));
-      console.log(`Loading timeline for build ${build.id}`);
-      const timeline = await ApiService.getBuildTimeline(
-        organization,
-        selectedProject,
-        build.id,
-        'Stage' // Only fetch Stage records, we'll filter out skipped ones in the frontend
-      );
-      if (timeline) {
-        console.log(`Got timeline for build ${build.id}:`, timeline);
-        setBuildTimelines(prev => new Map(prev).set(build.id, timeline));
-      } else {
-        console.log(`No timeline data for build ${build.id}`);
-      }
-    } catch (err) {
-      console.error(`Error loading timeline for build ${build.id}:`, err);
-    } finally {
-      // Remove from loading set
-      setTimelineLoading(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(build.id);
-        return newSet;
-      });
-    }
-  }, [buildTimelines, timelineLoading, organization, selectedProject]);
-
   // Auto-load timelines for all builds when builds change
   useEffect(() => {
     const buildsWithData = pipelineBuilds.filter(pb => pb.build !== null).map(pb => pb.build!);
@@ -206,83 +199,14 @@ const ReleaseView: React.FC = () => {
     setSelectedProject(event.target.value);
   };
 
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleString();
-  };
-
-  const formatDuration = (startTime?: string, finishTime?: string) => {
-    if (!startTime) return 'N/A';
-    
-    const start = new Date(startTime);
-    const finish = finishTime ? new Date(finishTime) : new Date();
-    const durationMs = finish.getTime() - start.getTime();
-    
-    const minutes = Math.floor(durationMs / 60000);
-    const seconds = Math.floor((durationMs % 60000) / 1000);
-    
-    return `${minutes}m ${seconds}s`;
-  };
-  
-  // Get the last (most recent) stage from the timeline, ignoring skipped stages
-  const getLastStage = (records?: TimelineRecord[]) => {
-    if (!records || records.length === 0) return null;
-    
-    // Filter out skipped stages
-    const nonSkippedStages = records.filter(record => 
-      record.result !== 'skipped' && record.result !== 'canceled'
-    );
-    
-    if (nonSkippedStages.length === 0) return null;
-    
-    // Sort by start time to get the chronologically last stage that actually started
-    const sortedStages = [...nonSkippedStages].sort((a, b) => {
-      // If both have start times, sort by start time (descending to get latest first)
-      if (a.startTime && b.startTime) {
-        return new Date(b.startTime).getTime() - new Date(a.startTime).getTime();
-      }
-      
-      // If only one has a start time, prioritize the one that started
-      if (a.startTime && !b.startTime) return -1;
-      if (!a.startTime && b.startTime) return 1;
-      
-      // If neither has start time, maintain original order
-      return 0;
-    });
-    
-    return sortedStages[0];
-  };
-  
-  // Get the appropriate icon for the stage status
-  const getStageStatusIcon = (stage: TimelineRecord | null) => {
-    if (!stage) {
-      return null;
-    }
-    
-    console.log(`Stage status for ${stage.name}:`, {
-      state: stage.state,
-      result: stage.result,
-      startTime: stage.startTime,
-      finishTime: stage.finishTime
-    });
-    
-    // Check state first for in-progress stages
-    if (stage.state === 'inProgress') {
-      return <img src="/icons/inprogress.svg" alt="In Progress" width="20" height="20" />;
-    }
-    
-    // Then check result for completed stages
-    if (stage.result === 'succeeded') {
-      return <img src="/icons/success.svg" alt="Success" width="20" height="20" />;
-    }
-    
-    if (stage.result === 'failed' || stage.result === 'partiallySucceeded') {
-      return <img src="/icons/failure.svg" alt="Failed" width="20" height="20" />;
-    }
-    
-    // For other states, show a neutral indicator or nothing
-    return null;
-  };
+  // Convert pipeline builds to Build array for BuildsTable
+  const buildsForTable: Build[] = pipelineBuilds
+    .filter(pb => pb.build !== null)
+    .map(pb => ({
+      ...pb.build!,
+      // Add pipeline name to build for display purposes
+      pipelineName: pb.pipeline.name
+    }));
 
   return (
     <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
@@ -290,7 +214,7 @@ const ReleaseView: React.FC = () => {
         Release
       </Typography>
 
-      {/* Filters */}
+      {/* Project Filter */}
       <Paper sx={{ p: 3, mb: 3 }}>
         <Typography variant="h6" gutterBottom>
           Filters
@@ -334,155 +258,27 @@ const ReleaseView: React.FC = () => {
         </Box>
       )}
 
-      {/* Pipeline Builds Table */}
-      {pipelineBuilds.length > 0 && (
-        <Paper sx={{ p: 3 }}>
-          <Typography variant="h6" gutterBottom>
-            Latest Builds from Main Branch ({pipelineBuilds.filter(pb => pb.build !== null).length} pipelines)
-          </Typography>
-          
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Pipeline</TableCell>
-                  <TableCell>Build Number</TableCell>
-                  <TableCell>Branch</TableCell>
-                  <TableCell>Reason</TableCell>
-                  <TableCell>Start Time</TableCell>
-                  <TableCell>Last Stage</TableCell>
-                  <TableCell>Build Time</TableCell>
-                  {appConfig.jiraEnabled && <TableCell>Jira Status</TableCell>}
-                  <TableCell>Tags</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {pipelineBuilds.map(({ pipeline, build }) => {
-                  if (!build) {
-                    return (
-                      <TableRow key={pipeline.id}>
-                        <TableCell>
-                          <Typography variant="body2" fontWeight="medium">
-                            {pipeline.name}
-                          </Typography>
-                        </TableCell>
-                        <TableCell colSpan={appConfig.jiraEnabled ? 8 : 7}>
-                          <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                            No builds found on main branch
-                          </Typography>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  }
-
-                  const projectName = build.project?.name || selectedProject;
-                  const orgName = organization;
-                  const buildUrl = `https://dev.azure.com/${encodeURIComponent(orgName)}/${encodeURIComponent(projectName)}/_build/results?buildId=${build.id}&view=results`;
-
-
-                  return (
-                    <TableRow
-                      key={`${pipeline.id}-${build.id}`}
-                      hover
-                      sx={{ cursor: 'pointer' }}
-                      onClick={() => window.open(buildUrl, '_blank', 'noopener')}
-                    >
-                      <TableCell>
-                        <Typography variant="body2" fontWeight="medium">
-                          {pipeline.name}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" fontWeight="medium">
-                          {build.buildNumber}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2">
-                          {build.sourceBranch ? build.sourceBranch.replace('refs/heads/', '') : 'N/A'}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2">
-                          {build.reason || 'N/A'}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2">
-                          {formatDate(build.startTime)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          {timelineLoading.has(build.id) ? (
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <CircularProgress size={16} />
-                              <Typography variant="body2" color="text.secondary">
-                                Loading...
-                              </Typography>
-                            </Box>
-                          ) : buildTimelines.has(build.id) ? (
-                            <>
-                              <Box>
-                                {getStageStatusIcon(getLastStage(buildTimelines.get(build.id)?.records))}
-                              </Box>
-                              <Typography variant="body2" sx={{ fontWeight: 'medium', color: 'text.primary' }}>
-                                {getLastStage(buildTimelines.get(build.id)?.records)?.name || 'No stages found'}
-                              </Typography>
-                            </>
-                          ) : (
-                            <Typography variant="body2" color="text.secondary">
-                              No stage information
-                            </Typography>
-                          )}
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2">
-                          {formatDuration(build.startTime, build.finishTime)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                          {build.tags && build.tags.length > 0 ? (
-                            build.tags.map((tag, index) => (
-                              <Chip
-                                key={index}
-                                label={tag}
-                                size="small"
-                                variant="outlined"
-                                sx={{ fontSize: '0.75rem' }}
-                              />
-                            ))
-                          ) : (
-                            <Typography variant="body2" color="text.secondary">
-                              No tags
-                            </Typography>
-                          )}
-                        </Box>
-                      </TableCell>
-                      {appConfig.jiraEnabled && (
-                        <TableCell>
-                          <JiraStatus build={build} jiraIssues={jiraIssues} jiraLoading={jiraLoading} />
-                        </TableCell>
-                      )}
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Paper>
-      )}
-
-      {/* No pipeline builds message */}
-      {!loading && pipelineBuilds.length === 0 && selectedProject && (
+      {/* Use BuildsTable component for consistency */}
+      {buildsForTable.length > 0 ? (
+        <BuildsTable
+          builds={buildsForTable}
+          buildTimelines={buildTimelines}
+          timelineLoading={timelineLoading}
+          jiraIssues={jiraIssues}
+          jiraLoading={jiraLoading}
+          organization={organization}
+          selectedProject={selectedProject}
+          showEnvironment={false}
+          showPipeline={true}
+          title={`Latest Builds from Main Branch`}
+        />
+      ) : !loading && selectedProject ? (
         <Paper sx={{ p: 3 }}>
           <Typography color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
             No pipelines found for the selected project.
           </Typography>
         </Paper>
-      )}
+      ) : null}
     </Container>
   );
 };
