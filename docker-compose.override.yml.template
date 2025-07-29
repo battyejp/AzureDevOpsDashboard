@@ -16,3 +16,4 @@ services:
     environment:
       - REACT_APP_API_URL=http://localhost:5031
       - REACT_APP_API_IS_MOCKED=false
+      - REACT_APP_JIRA_HOST=localhost:9999

@@ -19,6 +19,7 @@ import {
   TableRow,
   Chip
 } from '@mui/material';
+import { XenTagChip } from './XenTagChip';
 import { ApiService } from '../services/apiService';
 import { ConfigService } from '../services/configService';
 import { Project, Pipeline, Build, BuildTimeline, TimelineRecord } from '../models/types';
@@ -486,13 +487,7 @@ const BuildsView: React.FC = () => {
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                           {build.tags && build.tags.length > 0 ? (
                             build.tags.map((tag, index) => (
-                              <Chip
-                                key={index}
-                                label={tag}
-                                size="small"
-                                variant="outlined"
-                                sx={{ fontSize: '0.75rem' }}
-                              />
+                              <XenTagChip tag={tag} index={index} key={index} />
                             ))
                           ) : (
                             <Typography variant="body2" color="text.secondary">
