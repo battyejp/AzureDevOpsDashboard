@@ -224,44 +224,96 @@ export class MockApiService {
     ]
   };
 
-  private static generateMockBuilds(pipelineId: number, count: number = 10, projectName?: string): Build[] {
+  private static generateMockBuilds(pipelineId: number, count: number = 30, projectName?: string): Build[] {
     const builds: Build[] = [];
     const now = new Date();
     
     for (let i = 0; i < count; i++) {
-      const buildDate = new Date(now.getTime() - (i * 6 * 60 * 60 * 1000)); // 6 hours apart
-      const startTime = new Date(buildDate.getTime() + (10 * 60 * 1000)); // start 10 min after queue
-      const finishTime = new Date(startTime.getTime() + (Math.random() * 20 + 5) * 60 * 1000); // 5-25 min duration
+      // More varied timing - some builds closer together, some further apart
+      const hoursApart = Math.random() < 0.3 ? 1 : Math.random() < 0.6 ? 3 : 6;
+      const buildDate = new Date(now.getTime() - (i * hoursApart * 60 * 60 * 1000));
+      const startTime = new Date(buildDate.getTime() + (Math.random() * 20 + 5) * 60 * 1000); // 5-25 min after queue
+      const finishTime = new Date(startTime.getTime() + (Math.random() * 25 + 3) * 60 * 1000); // 3-28 min duration
       
-      // More varied results for realistic data - note that actual result assignment is done below
-      const reasons = ['IndividualCI', 'Manual', 'Scheduled', 'PullRequest', 'BatchedCI'];
-      // More diverse branch patterns
+      // Expanded and more realistic reasons and branches
+      const reasons = [
+        'IndividualCI', 'Manual', 'Scheduled', 'PullRequest', 'BatchedCI', 
+        'CheckInShelveset', 'ValidateShelveset', 'Triggered', 'ResourceTrigger'
+      ];
+      
+      // Much more diverse branch patterns for comprehensive filtering
       const branches = [
         'refs/heads/main', 
         'refs/heads/develop', 
+        'refs/heads/master',
         'refs/heads/feature/payment-integration',
         'refs/heads/feature/user-authentication',
-        'refs/heads/hotfix/security-patch',
-        'refs/heads/release/2024.1',
         'refs/heads/feature/mobile-api',
-        'refs/heads/bugfix/data-validation'
+        'refs/heads/feature/search-optimization',
+        'refs/heads/feature/notification-system',
+        'refs/heads/feature/reporting-dashboard',
+        'refs/heads/feature/admin-panel',
+        'refs/heads/feature/data-migration',
+        'refs/heads/feature/performance-improvements',
+        'refs/heads/hotfix/security-patch',
+        'refs/heads/hotfix/memory-leak',
+        'refs/heads/hotfix/critical-bug',
+        'refs/heads/bugfix/data-validation',
+        'refs/heads/bugfix/ui-layout',
+        'refs/heads/bugfix/api-timeout',
+        'refs/heads/release/2024.1',
+        'refs/heads/release/2024.2',
+        'refs/heads/release/v2.1.0',
+        'refs/pull/123/merge',
+        'refs/pull/456/merge',
+        'refs/pull/789/merge'
       ];
       
-      const status = i === 0 && Math.random() > 0.7 ? 'inProgress' : 'completed';
-      // Better distribution of results - more successes, some failures
+      // More realistic in-progress builds (only very recent ones)
+      const status = i < 2 && Math.random() > 0.8 ? 'inProgress' : 'completed';
+      
+      // Enhanced result distribution for better testing variety
       let result: string | undefined;
       if (status === 'inProgress') {
         result = undefined;
       } else {
         const rand = Math.random();
-        if (rand < 0.75) result = 'succeeded';        // 75% success rate
-        else if (rand < 0.9) result = 'partiallySucceeded'; // 15% partial
-        else result = 'failed';                        // 10% failure
+        // Different success rates based on branch type for realism
+        const branch = branches[Math.floor(Math.random() * branches.length)];
+        if (branch.includes('hotfix') || branch.includes('main') || branch.includes('master')) {
+          // Higher success rate for critical branches
+          if (rand < 0.85) result = 'succeeded';
+          else if (rand < 0.95) result = 'partiallySucceeded';
+          else result = 'failed';
+        } else if (branch.includes('feature')) {
+          // Normal success rate for feature branches
+          if (rand < 0.72) result = 'succeeded';
+          else if (rand < 0.88) result = 'partiallySucceeded';
+          else result = 'failed';
+        } else {
+          // Standard distribution for other branches
+          if (rand < 0.75) result = 'succeeded';
+          else if (rand < 0.9) result = 'partiallySucceeded';
+          else result = 'failed';
+        }
+      }
+      
+      // More diverse and realistic tag generation
+      let tags: string[] = [];
+      const tagRand = Math.random();
+      if (tagRand > 0.85) {
+        tags = ['hotfix'];
+      } else if (tagRand > 0.6) {
+        tags = [`Xen${Math.floor(Math.random() * 300) + 100}`];
+      } else if (tagRand > 0.8) {
+        tags = [`release-candidate`];
+      } else if (tagRand > 0.9) {
+        tags = [`security-scan`];
       }
       
       builds.push({
         id: 10000 + pipelineId * 100 + i,
-        buildNumber: `${pipelineId}.${new Date().getFullYear()}.${(count - i).toString().padStart(2, '0')}`,
+        buildNumber: `${pipelineId}.${new Date().getFullYear()}.${(count - i).toString().padStart(3, '0')}`,
         status: status,
         result: result,
         queueTime: buildDate.toISOString(),
@@ -270,7 +322,7 @@ export class MockApiService {
         url: `https://dev.azure.com/mockorg/_build/results?buildId=${10000 + pipelineId * 100 + i}`,
         sourceBranch: branches[Math.floor(Math.random() * branches.length)],
         reason: reasons[Math.floor(Math.random() * reasons.length)],
-        tags: Math.random() > 0.8 ? ['hotfix'] : Math.random() > 0.4 ? [`Xen${Math.floor(Math.random() * 200) + 100}`] : [],
+        tags: tags,
         definition: {
           id: pipelineId,
           name: `Pipeline ${pipelineId}`
@@ -318,27 +370,29 @@ export class MockApiService {
   }
 
   private static getDeploymentChance(pipelineId: number, environment: DeploymentEnvironment): number {
-    // Different deployment patterns based on pipeline type and environment
-    // Infrastructure and critical services deploy to all environments
-    // Some services might not deploy to production yet
+    // Enhanced deployment patterns for comprehensive testing
+    // Ensure much better coverage across all environments and pipelines
     
     switch (environment) {
       case DeploymentEnvironment.Dev:
-        return 0.95; // 95% of pipelines deploy to Dev
+        return 0.98; // 98% of pipelines deploy to Dev - almost universal
       case DeploymentEnvironment.SIT:
-        return 0.85; // 85% deploy to SIT  
+        return 0.92; // 92% deploy to SIT - very high for system integration testing
       case DeploymentEnvironment.UAT:
-        return 0.75; // 75% deploy to UAT
+        return 0.88; // 88% deploy to UAT - high for user acceptance testing
       case DeploymentEnvironment.PPD:
-        return 0.65; // 65% deploy to Pre-Prod
+        return 0.82; // 82% deploy to Pre-Prod - good coverage for final testing
       case DeploymentEnvironment.Prod:
-        // Production deployments vary by pipeline type
-        // Infrastructure and core services more likely to be in prod
-        if (pipelineId >= 5000) return 0.8; // Infrastructure pipelines
-        if (pipelineId >= 1000 && pipelineId < 2000) return 0.7; // E-commerce platform  
-        return 0.5; // Other services 50% chance
+        // Enhanced Production deployments with better variety for different pipeline types
+        if (pipelineId >= 5000) return 0.95; // Infrastructure pipelines - critical, deploy everywhere
+        if (pipelineId >= 1000 && pipelineId < 2000) return 0.85; // E-commerce platform - main business
+        if (pipelineId >= 2000 && pipelineId < 3000) return 0.80; // Mobile backend - important APIs
+        if (pipelineId >= 3000 && pipelineId < 4000) return 0.75; // Analytics - data processing
+        if (pipelineId >= 4000 && pipelineId < 5000) return 0.88; // Customer portal - customer-facing
+        if (pipelineId >= 6000) return 0.78; // Reporting services - business intelligence
+        return 0.70; // Default high coverage for production
       default:
-        return 0.8;
+        return 0.85; // High default coverage
     }
   }
 
