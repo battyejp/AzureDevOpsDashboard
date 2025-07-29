@@ -29,5 +29,5 @@ export const appConfig = {
    * Enable Jira integration features
    * Set via REACT_APP_JIRA_ENABLED environment variable
    */
-  jiraEnabled: process.env.REACT_APP_JIRA_ENABLED === 'true' || !process.env.REACT_APP_API_URL, // Enable by default in mock mode
+  jiraEnabled: process.env.REACT_APP_JIRA_HOST !== undefined, // Enable by default in mock mode
 };
