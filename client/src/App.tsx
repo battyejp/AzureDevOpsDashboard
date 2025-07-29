@@ -4,10 +4,10 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { Box } from '@mui/material';
 import Navigation from './components/Navigation';
-import Dashboard from './components/Dashboard';
-import BuildsView from './components/BuildsView';
-import ReleaseView from './components/ReleaseView';
-import Configuration from './components/Configuration';
+import Dashboard from './components/views/Dashboard';
+import BuildsView from './components/views/BuildsView';
+import ReleaseView from './components/views/ReleaseView';
+import Configuration from './components/views/Configuration';
 
 const theme = createTheme({
   palette: {

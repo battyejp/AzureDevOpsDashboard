@@ -7,9 +7,9 @@ import {
   SelectChangeEvent,
   Typography
 } from '@mui/material';
-import { useBuilds } from '../hooks/useBuilds';
-import { BuildFilters } from './BuildFilters';
-import { BuildsTable } from './BuildsTable';
+import { useBuilds } from '../../hooks/useBuilds';
+import { BuildFilters } from '../BuildFilters';
+import { BuildsTable } from '../BuildsTable';
 
 const BuildsView: React.FC = () => {
   const {

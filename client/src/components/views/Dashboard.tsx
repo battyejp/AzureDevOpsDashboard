@@ -12,11 +12,11 @@ import {
   CircularProgress,
   SelectChangeEvent
 } from '@mui/material';
-import { ApiService } from '../services/apiService';
-import { ConfigService } from '../services/configService';
-import { Project, DeploymentEnvironment, DashboardFilters, PipelineStatus } from '../models/types';
-import PipelineStatusGrid from './PipelineStatusGrid';
-import { appConfig } from '../config/appConfig';
+import { ApiService } from '../../services/apiService';
+import { ConfigService } from '../../services/configService';
+import { Project, DeploymentEnvironment, DashboardFilters, PipelineStatus } from '../../models/types';
+import PipelineStatusGrid from '../PipelineStatusGrid';
+import { appConfig } from '../../config/appConfig';
 
 const Dashboard: React.FC = () => {
   const [filters, setFilters] = useState<DashboardFilters>({

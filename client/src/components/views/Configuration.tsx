@@ -19,10 +19,10 @@ import {
 import SettingsIcon from '@mui/icons-material/Settings';
 import SaveIcon from '@mui/icons-material/Save';
 import ClearIcon from '@mui/icons-material/Clear';
-import { ApiService } from '../services/apiService';
-import { ConfigService } from '../services/configService';
-import { Project, Pipeline } from '../models/types';
-import { appConfig } from '../config/appConfig';
+import { ApiService } from '../../services/apiService';
+import { ConfigService } from '../../services/configService';
+import { Project, Pipeline } from '../../models/types';
+import { appConfig } from '../../config/appConfig';
 
 const Configuration: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -130,19 +130,19 @@ const Configuration: React.FC = () => {
   const handleSave = () => {
     try {
       let hasChanges = false;
-      
+
       // Save default project if specified
       if (defaultProject) {
         ConfigService.setDefaultProject(defaultProject);
         hasChanges = true;
       }
-      
+
       // Save pipeline filters if a project is selected for filtering
       if (selectedProjectForFilters) {
         ConfigService.setPipelineFilters(selectedProjectForFilters, selectedPipelines);
         hasChanges = true;
       }
-      
+
       if (hasChanges) {
         setSuccess('Configuration saved successfully!');
         setError('');
@@ -195,7 +195,7 @@ const Configuration: React.FC = () => {
         </Box>
 
         <Typography variant="body1" sx={{ mb: 4, color: 'text.secondary' }}>
-          Configure your default settings for the Azure DevOps Dashboard. 
+          Configure your default settings for the Azure DevOps Dashboard.
           The default project will be automatically selected across all views.
         </Typography>
 
@@ -247,7 +247,7 @@ const Configuration: React.FC = () => {
               Pipeline Filtering
             </Typography>
             <Typography variant="body2" sx={{ mb: 3, color: 'text.secondary' }}>
-              Configure which pipelines should be visible for each project. 
+              Configure which pipelines should be visible for each project.
               If no pipelines are selected, all pipelines will be shown.
             </Typography>
 
@@ -297,10 +297,10 @@ const Configuration: React.FC = () => {
                           {selected.map((pipelineId) => {
                             const pipeline = pipelines.find(p => p.id === pipelineId);
                             return (
-                              <Chip 
-                                key={pipelineId} 
-                                label={pipeline?.name || `Pipeline ${pipelineId}`} 
-                                size="small" 
+                              <Chip
+                                key={pipelineId}
+                                label={pipeline?.name || `Pipeline ${pipelineId}`}
+                                size="small"
                               />
                             );
                           })}
@@ -353,7 +353,6 @@ const Configuration: React.FC = () => {
               >
                 Save Configuration
               </Button>
-              
               <Button
                 variant="outlined"
                 color="secondary"

@@ -12,13 +12,13 @@ import {
   CircularProgress,
   SelectChangeEvent
 } from '@mui/material';
-import { ApiService } from '../services/apiService';
-import { ConfigService } from '../services/configService';
-import { Project, Pipeline, Build, BuildTimeline } from '../models/types';
-import { appConfig } from '../config/appConfig';
-import { extractJiraIssueKey } from '../utils/jiraUtils';
-import { useJira } from '../hooks/useJira';
-import { BuildsTable } from './BuildsTable';
+import { ApiService } from '../../services/apiService';
+import { ConfigService } from '../../services/configService';
+import { Project, Pipeline, Build, BuildTimeline } from '../../models/types';
+import { appConfig } from '../../config/appConfig';
+import { extractJiraIssueKey } from '../../utils/jiraUtils';
+import { useJira } from '../../hooks/useJira';
+import { BuildsTable } from '../BuildsTable';
 
 const ReleaseView: React.FC = () => {
   const [organization] = useState<string>(appConfig.azureDevOpsOrganization);
