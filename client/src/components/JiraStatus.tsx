@@ -40,6 +40,7 @@ export const JiraStatus: React.FC<JiraStatusProps> = ({ build, jiraIssues, jiraL
   }
 
   const isDone = isJiraStatusDone(jiraIssue.fields.status);
+  const jiraUrl = `https://${appConfig.jiraHost}/browse/${issueKey.toUpperCase()}`;
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
       {isDone ? (
@@ -47,9 +48,11 @@ export const JiraStatus: React.FC<JiraStatusProps> = ({ build, jiraIssues, jiraL
       ) : (
         <HourglassBottomIcon sx={{ color: 'orange', fontSize: 20 }} />
       )}
-      <Typography variant="body2" color="text.secondary">
-        {jiraIssue.fields.status.name}
-      </Typography>
+      <a href={jiraUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
+        <Typography variant="body2" color="text.secondary" sx={{ textDecoration: 'underline', cursor: 'pointer' }}>
+          {jiraIssue.fields.status.name}
+        </Typography>
+      </a>
     </Box>
   );
 };

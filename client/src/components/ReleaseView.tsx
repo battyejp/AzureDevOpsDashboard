@@ -442,11 +442,6 @@ const ReleaseView: React.FC = () => {
                           {formatDuration(build.startTime, build.finishTime)}
                         </Typography>
                       </TableCell>
-                      {appConfig.jiraEnabled && (
-                        <TableCell>
-                          <JiraStatus build={build} jiraIssues={jiraIssues} jiraLoading={jiraLoading} />
-                        </TableCell>
-                      )}
                       <TableCell>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                           {build.tags && build.tags.length > 0 ? (
@@ -466,6 +461,11 @@ const ReleaseView: React.FC = () => {
                           )}
                         </Box>
                       </TableCell>
+                      {appConfig.jiraEnabled && (
+                        <TableCell>
+                          <JiraStatus build={build} jiraIssues={jiraIssues} jiraLoading={jiraLoading} />
+                        </TableCell>
+                      )}
                     </TableRow>
                   );
                 })}
