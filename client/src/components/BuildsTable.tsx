@@ -144,7 +144,17 @@ export const BuildsTable: React.FC<BuildsTableProps> = ({
                       ) : buildTimelines.has(build.id) ? (
                         <>
                           <Box>
-                            {getStageStatusIcon(getLastStage(buildTimelines.get(build.id)?.records))}
+                            {(() => {
+                              const iconInfo = getStageStatusIcon(getLastStage(buildTimelines.get(build.id)?.records));
+                              return iconInfo ? (
+                                <img 
+                                  src={iconInfo.src} 
+                                  alt={iconInfo.alt} 
+                                  width="20" 
+                                  height="20" 
+                                />
+                              ) : null;
+                            })()}
                           </Box>
                           <Typography variant="body2" sx={{ fontWeight: 'medium', color: 'text.primary' }}>
                             {getLastStage(buildTimelines.get(build.id)?.records)?.name || 'No stages found'}

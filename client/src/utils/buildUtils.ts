@@ -1,4 +1,3 @@
-import React from 'react';
 import { TimelineRecord } from '../models/types';
 
 /**
@@ -52,8 +51,8 @@ export const getLastStage = (records?: TimelineRecord[]): TimelineRecord | null 
   return sortedStages[0];
 };
 
-// Get the appropriate icon for the stage status
-export const getStageStatusIcon = (stage: TimelineRecord | null): React.ReactElement | null => {
+// Get the appropriate icon info for the stage status
+export const getStageStatusIcon = (stage: TimelineRecord | null): { src: string; alt: string } | null => {
   if (!stage) {
     return null;
   }
@@ -67,16 +66,16 @@ export const getStageStatusIcon = (stage: TimelineRecord | null): React.ReactEle
   
   // Check state first for in-progress stages
   if (stage.state === 'inProgress') {
-    return React.createElement('img', { src: '/icons/inprogress.svg', alt: 'In Progress', width: '20', height: '20' });
+    return { src: '/icons/inprogress.svg', alt: 'In Progress' };
   }
   
   // Then check result for completed stages
   if (stage.result === 'succeeded') {
-    return React.createElement('img', { src: '/icons/success.svg', alt: 'Success', width: '20', height: '20' });
+    return { src: '/icons/success.svg', alt: 'Success' };
   }
   
   if (stage.result === 'failed' || stage.result === 'partiallySucceeded') {
-    return React.createElement('img', { src: '/icons/failure.svg', alt: 'Failed', width: '20', height: '20' });
+    return { src: '/icons/failure.svg', alt: 'Failed' };
   }
   
   // For other states, show a neutral indicator or nothing
