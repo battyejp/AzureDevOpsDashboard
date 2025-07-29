@@ -9,5 +9,9 @@
   "AzureDevOps": {
     "Organization": "YOUR_ORGANIZATION_HERE",
     "PAT": "YOUR_PERSONAL_ACCESS_TOKEN_HERE"
+  },
+  "Mcp": {
+    "Url": "https://mcp-server.example.com/api",
+    "ApiKey": "your-mcp-api-key"
   }
 }

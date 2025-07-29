@@ -356,7 +356,8 @@ const ReleaseView: React.FC = () => {
                   const projectName = build.project?.name || selectedProject;
                   const orgName = organization;
                   const buildUrl = `https://dev.azure.com/${encodeURIComponent(orgName)}/${encodeURIComponent(projectName)}/_build/results?buildId=${build.id}&view=results`;
-                  
+
+
                   return (
                     <TableRow
                       key={`${pipeline.id}-${build.id}`}

@@ -17,5 +17,11 @@ export const appConfig = {
    * Indicates if the API is mocked
    * Set via REACT_APP_API_IS_MOCKED environment variable
    */
-  apiIsMocked: !process.env.REACT_APP_API_URL
+  apiIsMocked: !process.env.REACT_APP_API_URL,
+
+  /**
+   * Jira Host (without protocol)
+   * Set via REACT_APP_JIRA_HOST environment variable
+   */
+  jiraHost: process.env.REACT_APP_JIRA_HOST || 'localhost:9999',
 };
