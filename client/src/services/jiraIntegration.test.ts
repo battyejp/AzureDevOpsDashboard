@@ -13,15 +13,15 @@ describe('Jira Integration', () => {
     it('should return Done status for specific issue keys', async () => {
       const issue = await MockApiService.getJiraIssue('Xen100');
       expect(issue).not.toBeNull();
-      expect(issue?.status).toBe('Done');
+      expect(issue?.status.name).toBe('Done');
       expect(issue?.key).toBe('Xen100');
     });
 
     it('should return non-Done status for other issue keys', async () => {
       const issue = await MockApiService.getJiraIssue('Xen101');
       expect(issue).not.toBeNull();
-      expect(issue?.status).not.toBe('Done');
-      expect(['In Progress', 'In Review', 'Ready for Test', 'To Do']).toContain(issue?.status);
+      expect(issue?.status.name).not.toBe('Done');
+      expect(['In Progress', 'In Review', 'Ready for Test', 'To Do']).toContain(issue?.status.name);
     });
 
     it('should return null for non-existent issues', async () => {
@@ -37,7 +37,7 @@ describe('Jira Integration', () => {
         MockApiService.getJiraIssue('Xen104'), // Should be In Review
       ]);
 
-      const statuses = issues.filter(Boolean).map(issue => issue!.status);
+      const statuses = issues.filter(Boolean).map(issue => issue!.status.name);
       expect(statuses).toContain('Done');
       expect(statuses.length).toBeGreaterThan(2); // Should have variety
     });
@@ -57,8 +57,11 @@ describe('Jira Integration', () => {
       const issueKey = extractJiraIssueKey(tags);
       expect(issueKey).toBe('Xen123');
       
+      // Test both string and object formats
       expect(isJiraStatusDone('Done')).toBe(true);
       expect(isJiraStatusDone('In Progress')).toBe(false);
+      expect(isJiraStatusDone({ name: 'Done' })).toBe(true);
+      expect(isJiraStatusDone({ name: 'In Progress' })).toBe(false);
     });
 
     it('should handle case-insensitive Jira key extraction', () => {

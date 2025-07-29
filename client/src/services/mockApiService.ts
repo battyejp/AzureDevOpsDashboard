@@ -299,7 +299,7 @@ export class MockApiService {
     
     return {
       key: issueKey,
-      status: status,
+      status: { name: status },
       summary: `Mock Jira issue: ${status === 'Done' ? 'Completed feature' : 'Feature development'} for ${issueKey}`,
       assignee: assignee,
       priority: priority

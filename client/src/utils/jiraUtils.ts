@@ -36,9 +36,10 @@ export function shouldShowJiraStatus(tags: string[]): boolean {
 
 /**
  * Determines if a Jira status represents a completed state
- * @param status Jira issue status string
+ * @param status Jira issue status object or string
  * @returns true if status indicates completion, false otherwise
  */
-export function isJiraStatusDone(status: string): boolean {
-  return status.toLowerCase() === 'done';
+export function isJiraStatusDone(status: { name: string } | string): boolean {
+  const statusName = typeof status === 'string' ? status : status.name;
+  return statusName.toLowerCase() === 'done';
 }

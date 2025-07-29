@@ -19,13 +19,13 @@ import {
   TableRow,
   Chip
 } from '@mui/material';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import HourglassBottomIcon from '@mui/icons-material/HourglassBottom';
 import { ApiService } from '../services/apiService';
 import { ConfigService } from '../services/configService';
-import { Project, Pipeline, Build, BuildTimeline, TimelineRecord, JiraIssue } from '../models/types';
+import { Project, Pipeline, Build, BuildTimeline, TimelineRecord } from '../models/types';
 import { appConfig } from '../config/appConfig';
-import { extractJiraIssueKey, isJiraStatusDone } from '../utils/jiraUtils';
+import { extractJiraIssueKey } from '../utils/jiraUtils';
+import { useJira } from '../hooks/useJira';
+import { JiraStatus } from './JiraStatus';
 
 const ReleaseView: React.FC = () => {
   const [organization] = useState<string>(appConfig.azureDevOpsOrganization);
@@ -34,10 +34,11 @@ const ReleaseView: React.FC = () => {
   const [pipelineBuilds, setPipelineBuilds] = useState<{ pipeline: Pipeline; build: Build | null }[]>([]);
   const [buildTimelines, setBuildTimelines] = useState<Map<number, BuildTimeline>>(new Map());
   const [timelineLoading, setTimelineLoading] = useState<Set<number>>(new Set());
-  const [jiraIssues, setJiraIssues] = useState<Map<string, JiraIssue>>(new Map());
-  const [jiraLoading, setJiraLoading] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+
+  // Use shared Jira hook
+  const { jiraIssues, jiraLoading, loadJiraIssue } = useJira();
 
   // Load projects on component mount
   useEffect(() => {
@@ -124,11 +125,9 @@ const ReleaseView: React.FC = () => {
         const pipelineBuildsData = await Promise.all(pipelineBuildPromises);
         setPipelineBuilds(pipelineBuildsData);
         
-        // Clear previous timelines and Jira issues when data changes
+        // Clear previous timelines when data changes
         setBuildTimelines(new Map());
         setTimelineLoading(new Set());
-        setJiraIssues(new Map());
-        setJiraLoading(new Set());
 
       } catch (err: any) {
         const errorMessage = err?.message || 'Unknown error';
@@ -175,34 +174,6 @@ const ReleaseView: React.FC = () => {
       });
     }
   }, [buildTimelines, timelineLoading, organization, selectedProject]);
-
-  // Load Jira issue for a specific issue key (memoized to avoid changing on every render)
-  const loadJiraIssue = useCallback(async (issueKey: string) => {
-    if (jiraIssues.has(issueKey) || jiraLoading.has(issueKey) || !appConfig.jiraEnabled) {
-      return; // Already loaded or loading, or Jira is disabled
-    }
-    try {
-      // Add to loading set
-      setJiraLoading(prev => new Set(prev).add(issueKey));
-      console.log(`Loading Jira issue ${issueKey}`);
-      const issue = await ApiService.getJiraIssue(issueKey);
-      if (issue) {
-        console.log(`Got Jira issue ${issueKey}:`, issue);
-        setJiraIssues(prev => new Map(prev).set(issueKey, issue));
-      } else {
-        console.log(`No Jira issue data for ${issueKey}`);
-      }
-    } catch (err) {
-      console.error(`Error loading Jira issue ${issueKey}:`, err);
-    } finally {
-      // Remove from loading set
-      setJiraLoading(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(issueKey);
-        return newSet;
-      });
-    }
-  }, [jiraIssues, jiraLoading]);
 
   // Auto-load timelines for all builds when builds change
   useEffect(() => {
@@ -311,46 +282,6 @@ const ReleaseView: React.FC = () => {
     
     // For other states, show a neutral indicator or nothing
     return null;
-  };
-
-  // Get the appropriate icon and text for Jira status
-  const renderJiraStatus = (build: Build) => {
-    if (!appConfig.jiraEnabled) {
-      return null;
-    }
-
-    const issueKey = extractJiraIssueKey(build.tags);
-    if (!issueKey) {
-      return <Typography variant="body2" color="text.secondary">-</Typography>;
-    }
-
-    if (jiraLoading.has(issueKey)) {
-      return (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <CircularProgress size={16} />
-          <Typography variant="body2" color="text.secondary">Loading...</Typography>
-        </Box>
-      );
-    }
-
-    const jiraIssue = jiraIssues.get(issueKey);
-    if (!jiraIssue) {
-      return <Typography variant="body2" color="text.secondary">Not found</Typography>;
-    }
-
-    const isDone = isJiraStatusDone(jiraIssue.status);
-    return (
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        {isDone ? (
-          <CheckCircleIcon sx={{ color: 'green', fontSize: 20 }} />
-        ) : (
-          <HourglassBottomIcon sx={{ color: 'orange', fontSize: 20 }} />
-        )}
-        <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-          {jiraIssue.status}
-        </Typography>
-      </Box>
-    );
   };
 
   return (
@@ -513,7 +444,7 @@ const ReleaseView: React.FC = () => {
                       </TableCell>
                       {appConfig.jiraEnabled && (
                         <TableCell>
-                          {renderJiraStatus(build)}
+                          <JiraStatus build={build} jiraIssues={jiraIssues} jiraLoading={jiraLoading} />
                         </TableCell>
                       )}
                       <TableCell>
