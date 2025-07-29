@@ -97,6 +97,51 @@ api/
 
 ---
 
+
+---
+
+## Testing
+
+This project includes three types of tests:
+
+### 1. .NET API Tests
+
+Run all backend (API) tests using the .NET CLI:
+
+```bash
+cd ../api/AzDevOpsApi
+dotnet test
+```
+This will build and run all unit and integration tests for the API.
+
+### 2. React Unit/Component Tests
+
+Run all React (frontend) tests using:
+
+```bash
+npm test
+```
+This launches the test runner in interactive watch mode for all React unit and component tests.
+
+### 3. Playwright End-to-End Tests
+
+Run Playwright E2E tests for the UI:
+
+```bash
+npm run test:e2e
+```
+For smoke tests (faster, good for CI/local dev):
+```bash
+npm run test:e2e:smoke
+```
+For UI mode (visual debugging):
+```bash
+npm run test:e2e:ui
+```
+Playwright tests simulate real user interactions and verify the app end-to-end, using mock data by default.
+
+---
+
 ## Learn More
 
 - [React Documentation](https://reactjs.org/)
