@@ -98,7 +98,7 @@ namespace AzDevOpsApi.Services
         {
             try
             {
-                var url = $"{_baseUrl.TrimEnd('/')}/{organization}/{project}/_apis/build/builds?definitions={pipelineId}&$top={count}&statusFilter={statusFilter}&queryOrder=startTimeDescending&api-version=7.1";
+                var url = $"{_baseUrl.TrimEnd('/')}/{organization}/{project}/_apis/build/builds?definitions={pipelineId}&$top={count}&statusFilter={statusFilter}&queryOrder=queueTimeDescending&api-version=7.1";
                 if (!string.IsNullOrEmpty(branch))
                 {
                     url += $"&branchName={Uri.EscapeDataString(branch)}";
@@ -146,7 +146,7 @@ namespace AzDevOpsApi.Services
                 var branch = "refs/heads/main"; // Default branch, can be parameterized if needed
                 var count = 10; // Number of builds to check, can be parameterized if needed
                 var reasonFilter = "individualCI"; // Filter for individual CI builds
-                var url = $"{_baseUrl.TrimEnd('/')}/{organization}/{project}/_apis/build/builds?definitions={pipelineId}&branchName={branch}&$top={count}&reasonFilter={reasonFilter}&api-version=7.1&queryOrder=startTimeDescending";
+                var url = $"{_baseUrl.TrimEnd('/')}/{organization}/{project}/_apis/build/builds?definitions={pipelineId}&branchName={branch}&$top={count}&reasonFilter={reasonFilter}&api-version=7.1&queryOrder=queueTimeDescending";
                 var response = await GetAsync<AzureDevOpsBuildsResponse>(url, pat);
 
                 _logger.LogInformation("Retrieved {Count} builds for pipeline {PipelineId}", response.Value.Length, pipelineId);

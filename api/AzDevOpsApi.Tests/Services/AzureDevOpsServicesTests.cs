@@ -513,7 +513,7 @@ public class AzureDevOpsServicesTests : IDisposable
             .WithParam("$top", count.ToString())
             .WithParam("api-version", "7.1")
             .WithParam("statusFilter", "all")
-            .WithParam("queryOrder", "startTimeDescending");
+            .WithParam("queryOrder", "queueTimeDescending");
         _wireMockServer
             .Given(request.UsingGet())
             .RespondWith(Response.Create()
@@ -735,7 +735,7 @@ public class AzureDevOpsServicesTests : IDisposable
                 .WithParam("$top", "10")
                 .WithParam("reasonFilter", "individualCI")
                 .WithParam("api-version", "7.1")
-                .WithParam("queryOrder", "startTimeDescending")
+                .WithParam("queryOrder", "queueTimeDescending")
                 .UsingGet())
             .RespondWith(Response.Create()
                 .WithStatusCode(200)
@@ -960,7 +960,7 @@ public class AzureDevOpsServicesTests : IDisposable
                 .WithParam("$top", "10")
                 .WithParam("reasonFilter", "individualCI")
                 .WithParam("api-version", "7.1")
-                .WithParam("queryOrder", "startTimeDescending")
+                .WithParam("queryOrder", "queueTimeDescending")
                 .UsingGet())
             .RespondWith(Response.Create()
                 .WithStatusCode(200)
@@ -988,7 +988,7 @@ public class AzureDevOpsServicesTests : IDisposable
                 .WithParam("$top", "10")
                 .WithParam("reasonFilter", "individualCI")
                 .WithParam("api-version", "7.1")
-                .WithParam("queryOrder", "startTimeDescending")
+                .WithParam("queryOrder", "queueTimeDescending")
                 .UsingGet())
             .RespondWith(Response.Create()
                 .WithStatusCode(200)
@@ -1014,7 +1014,7 @@ public class AzureDevOpsServicesTests : IDisposable
             .WithParam("$top", count.ToString())
             .WithParam("api-version", "7.1")
             .WithParam("statusFilter", "all")
-            .WithParam("queryOrder", "startTimeDescending");
+            .WithParam("queryOrder", "queueTimeDescending");
         _wireMockServer
             .Given(request.UsingGet())
             .RespondWith(Response.Create()
