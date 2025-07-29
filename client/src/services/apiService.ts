@@ -1,6 +1,6 @@
 
 import axios from 'axios';
-import { Project, Pipeline, Build, DeploymentEnvironment, DeployedBuild, BuildTimeline } from '../models/types';
+import { Project, Pipeline, Build, DeploymentEnvironment, DeployedBuild, BuildTimeline, JiraIssue } from '../models/types';
 import { MockApiService } from './mockApiService';
 import { appConfig } from '../config/appConfig';
 
@@ -171,5 +171,18 @@ export class ApiService {
     }
     const response = await apiClient.get<BuildTimeline>(url);
     return response.data;
+  }
+
+  static async getJiraIssue(issueKey: string): Promise<JiraIssue | null> {
+    if (appConfig.apiIsMocked) {
+      return MockApiService.getJiraIssue(issueKey);
+    }
+    try {
+      const response = await apiClient.get<JiraIssue>(`/jira/issue/${encodeURIComponent(issueKey)}`);
+      return response.data;
+    } catch (error: any) {
+      console.error(`Error fetching Jira issue ${issueKey}:`, error);
+      return null;
+    }
   }
 }

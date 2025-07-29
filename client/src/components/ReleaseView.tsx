@@ -23,6 +23,9 @@ import { ApiService } from '../services/apiService';
 import { ConfigService } from '../services/configService';
 import { Project, Pipeline, Build, BuildTimeline, TimelineRecord } from '../models/types';
 import { appConfig } from '../config/appConfig';
+import { extractJiraIssueKey } from '../utils/jiraUtils';
+import { useJira } from '../hooks/useJira';
+import { JiraStatus } from './JiraStatus';
 
 const ReleaseView: React.FC = () => {
   const [organization] = useState<string>(appConfig.azureDevOpsOrganization);
@@ -33,6 +36,9 @@ const ReleaseView: React.FC = () => {
   const [timelineLoading, setTimelineLoading] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+
+  // Use shared Jira hook
+  const { jiraIssues, jiraLoading, loadJiraIssue } = useJira();
 
   // Load projects on component mount
   useEffect(() => {
@@ -180,6 +186,21 @@ const ReleaseView: React.FC = () => {
       });
     }
   }, [pipelineBuilds, loadBuildTimeline]);
+
+  // Auto-load Jira issues for builds with matching tags
+  useEffect(() => {
+    const buildsWithData = pipelineBuilds.filter(pb => pb.build !== null).map(pb => pb.build!);
+    if (buildsWithData.length > 0 && appConfig.jiraEnabled) {
+      // Auto-load Jira issues for builds with matching tags
+      buildsWithData.forEach((build: Build, index: number) => {
+        const issueKey = extractJiraIssueKey(build.tags);
+        if (issueKey) {
+          // Stagger the requests to avoid overwhelming the API
+          setTimeout(() => loadJiraIssue(issueKey), index * 250);
+        }
+      });
+    }
+  }, [pipelineBuilds, loadJiraIssue]);
 
   const handleProjectChange = (event: SelectChangeEvent<string>) => {
     setSelectedProject(event.target.value);
@@ -331,6 +352,7 @@ const ReleaseView: React.FC = () => {
                   <TableCell>Start Time</TableCell>
                   <TableCell>Last Stage</TableCell>
                   <TableCell>Build Time</TableCell>
+                  {appConfig.jiraEnabled && <TableCell>Jira Status</TableCell>}
                   <TableCell>Tags</TableCell>
                 </TableRow>
               </TableHead>
@@ -344,7 +366,7 @@ const ReleaseView: React.FC = () => {
                             {pipeline.name}
                           </Typography>
                         </TableCell>
-                        <TableCell colSpan={7}>
+                        <TableCell colSpan={appConfig.jiraEnabled ? 8 : 7}>
                           <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
                             No builds found on main branch
                           </Typography>
@@ -439,6 +461,11 @@ const ReleaseView: React.FC = () => {
                           )}
                         </Box>
                       </TableCell>
+                      {appConfig.jiraEnabled && (
+                        <TableCell>
+                          <JiraStatus build={build} jiraIssues={jiraIssues} jiraLoading={jiraLoading} />
+                        </TableCell>
+                      )}
                     </TableRow>
                   );
                 })}

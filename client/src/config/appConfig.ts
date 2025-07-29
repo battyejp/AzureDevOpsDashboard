@@ -24,4 +24,10 @@ export const appConfig = {
    * Set via REACT_APP_JIRA_HOST environment variable
    */
   jiraHost: process.env.REACT_APP_JIRA_HOST || 'localhost:9999',
+
+  /**
+   * Enable Jira integration features
+   * Set via REACT_APP_JIRA_ENABLED environment variable
+   */
+  jiraEnabled: process.env.REACT_APP_JIRA_HOST !== undefined, // Enable by default in mock mode
 };

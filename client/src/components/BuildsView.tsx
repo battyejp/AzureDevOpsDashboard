@@ -23,6 +23,9 @@ import { ApiService } from '../services/apiService';
 import { ConfigService } from '../services/configService';
 import { Project, Pipeline, Build, BuildTimeline, TimelineRecord } from '../models/types';
 import { appConfig } from '../config/appConfig';
+import { extractJiraIssueKey } from '../utils/jiraUtils';
+import { useJira } from '../hooks/useJira';
+import { JiraStatus } from './JiraStatus';
 
 const BuildsView: React.FC = () => {
   const [organization] = useState<string>(appConfig.azureDevOpsOrganization);
@@ -38,6 +41,9 @@ const BuildsView: React.FC = () => {
   // New: branch and reason filter state
   const [branchFilter, setBranchFilter] = useState<string>(''); // Default to 'All'
   const [reasonFilter, setReasonFilter] = useState<string>(''); // Default to 'All'
+
+  // Use shared Jira hook
+  const { jiraIssues, jiraLoading, loadJiraIssue } = useJira();
 
   // Reason options (can be extended as needed)
   // Azure DevOps BuildReason enum values
@@ -220,6 +226,20 @@ const BuildsView: React.FC = () => {
       });
     }
   }, [builds, loadBuildTimeline]);
+
+  // Auto-load Jira issues for builds with matching tags
+  useEffect(() => {
+    if (builds.length > 0 && appConfig.jiraEnabled) {
+      // Auto-load Jira issues for builds with matching tags
+      builds.forEach((build: Build, index: number) => {
+        const issueKey = extractJiraIssueKey(build.tags);
+        if (issueKey) {
+          // Stagger the requests to avoid overwhelming the API
+          setTimeout(() => loadJiraIssue(issueKey), index * 250);
+        }
+      });
+    }
+  }, [builds, loadJiraIssue]);
 
   const handleProjectChange = (event: SelectChangeEvent<string>) => {
     setSelectedProject(event.target.value);
@@ -415,6 +435,7 @@ const BuildsView: React.FC = () => {
                   <TableCell>Start Time</TableCell>
                   <TableCell>Last Stage</TableCell>
                   <TableCell>Build Time</TableCell>
+                  {appConfig.jiraEnabled && <TableCell>Jira Status</TableCell>}
                   <TableCell>Tags</TableCell>
                 </TableRow>
               </TableHead>
@@ -501,6 +522,11 @@ const BuildsView: React.FC = () => {
                           )}
                         </Box>
                       </TableCell>
+                      {appConfig.jiraEnabled && (
+                        <TableCell>
+                          <JiraStatus build={build} jiraIssues={jiraIssues} jiraLoading={jiraLoading} />
+                        </TableCell>
+                      )}
                     </TableRow>
                   );
                 })}
