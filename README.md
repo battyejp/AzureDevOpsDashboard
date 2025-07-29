@@ -1,6 +1,16 @@
 # Azure DevOps Dashboard
 
-Azure DevOps Dashboard is a modern web application for visualizing and monitoring Azure DevOps pipelines, builds, and deployments. It provides a unified view of your DevOps activity, making it easy to track build health, deployment status, and project configuration.
+Azure DevOps Dashboard is a modern web application for visualizing and monitoring Azure DevOps pipelines, builds, and deployments. It provides a unified view of your DevOps activity, making it easy to track build health, deployment status, project configuration, and **Jira ticket integration**. The application features a clean, Material-UI based interface with real-time data updates and comprehensive filtering capabilities.
+
+## Key Features
+
+- **🔄 Real-time Pipeline Monitoring**: Live updates of build and deployment status
+- **🏷️ Jira Integration**: Automatic detection and linking of Jira tickets from build tags
+- **📊 Multi-view Dashboard**: Four specialized views for different monitoring needs
+- **🎯 Smart Filtering**: Filter builds by project, branch, status, and more
+- **🎨 Modern UI**: Clean Material-UI interface with responsive design
+- **⚡ Performance Optimized**: Shared components and efficient data loading
+- **🧪 Comprehensive Testing**: Unit tests, integration tests, and E2E tests
 
 ---
 
@@ -17,13 +27,18 @@ The dashboard features four main views, accessible from the navigation bar:
 
 ### 2. Builds View
 - **Purpose:** Browse recent builds for all pipelines, filter by project, branch, or status.
-- **Features:** Build numbers, status, timestamps, and direct links to Azure DevOps.
+- **Features:** Build numbers, status, timestamps, direct links to Azure DevOps, and **Jira ticket integration**.
+- **Jira Integration:** 
+  - Automatically detects Jira ticket references in build tags (e.g., "Xen-123", "XEN-456")
+  - Displays clickable Jira status badges that link directly to tickets
+  - Shows ticket status (To Do, In Progress, In Review, Done) with color coding
 
 ![Builds View Screenshot](client/screenshots/builds-view.png)
 
 ### 3. Release View
 - **Purpose:** See the latest build for each pipeline on the main branch, focused on release candidates (Individual CI builds).
-- **Features:** Shows the most recent qualifying build per pipeline, with build details, branch, reason, and quick links to Azure DevOps.
+- **Features:** Shows the most recent qualifying build per pipeline, with build details, branch, reason, direct links to Azure DevOps, and **Jira ticket integration**.
+- **Enhanced Display:** Pipeline name prominently displayed for easy identification across projects.
 
 ![Release View Screenshot](client/screenshots/release-view.png)
 
@@ -62,6 +77,21 @@ To connect the backend API to your Azure DevOps organization, you need a Persona
 **Never commit real PAT tokens to source control.**
 For production, use environment variables or a secure secrets store.
 
+#### Optional: Jira Integration Setup
+
+To enable Jira ticket integration features:
+
+1. Configure your Jira base URL and authentication in the API settings.
+2. The system automatically detects Jira ticket references in build tags (supports formats like "XEN-123", "xen-456").
+3. **Set up MCP Server for Jira**: Configure the Model Context Protocol (MCP) server to enable seamless Jira API integration:
+   - Install and configure the MCP Jira server component
+   - Set up authentication credentials for Jira API access
+   - Configure the server endpoint in your API settings
+   - Ensure proper network connectivity between the API and Jira instance
+4. Build tables will display clickable Jira status badges linking directly to tickets.
+
+*Note: Jira integration is optional. The dashboard works fully without it, using mock data for demonstration.*
+
 ### Ways to Run the UI and API
 
 #### 1. Using npm/yarn (local development)
@@ -87,12 +117,19 @@ For production, use environment variables or a secure secrets store.
 
 #### 2. Using Visual Studio Code Tasks
 
+This project includes pre-configured VS Code tasks for easy development:
+
 - Open the Command Palette (`Ctrl+Shift+P` or `F1`).
 - Select `Tasks: Run Task`.
-- Choose:
-  - `Start client (mock API)` for mock mode.
-  - `Start client (real API)` to connect to the backend.
-  - `Start API` to run the backend.
+- Choose from available tasks:
+  - **`Start client (mock API)`** - Runs the UI with mock data (no backend required)
+  - **`Start client (real API)`** - Runs the UI connected to the backend API
+  - **`Start API`** - Runs the .NET backend server
+  - **`Run Playwright Tests`** - Executes E2E smoke tests
+  - **`Build client with tests`** - Builds the client and runs all tests
+  - **`Build and Test API`** - Builds and tests the backend API
+
+*Tasks can run in the background, allowing you to start multiple services simultaneously.*
 
 #### 3. Using Docker
 
@@ -108,37 +145,91 @@ For production, use environment variables or a secure secrets store.
 
 ```
 client/
- ├── public/                # Static files (add screenshots here)
+ ├── public/                # Static files and screenshots
  ├── src/
- │   ├── components/        # UI components
+ │   ├── components/        # Reusable UI components
+ │   │   ├── views/         # Main application views
+ │   │   │   ├── BuildsView.tsx      # Builds listing page
+ │   │   │   ├── ReleaseView.tsx     # Release candidates page
+ │   │   │   ├── Dashboard.tsx       # Deployments overview
+ │   │   │   └── Configuration.tsx   # Settings page
+ │   │   ├── BuildsTable.tsx         # Shared builds table
+ │   │   ├── BuildFilters.tsx        # Filtering controls
+ │   │   ├── JiraStatus.tsx          # Jira integration component
+ │   │   └── Navigation.tsx          # App navigation
+ │   ├── hooks/             # Custom React hooks
+ │   │   ├── useBuilds.ts            # Shared builds data logic
+ │   │   └── useJira.ts              # Jira integration logic
+ │   ├── utils/             # Utility functions
+ │   │   ├── buildUtils.ts           # Build data processing
+ │   │   └── jiraUtils.ts            # Jira tag parsing
  │   ├── models/            # TypeScript interfaces
- │   ├── services/          # API services
+ │   ├── services/          # API services (real + mock)
  │   ├── App.tsx            # Main application component
  │   └── index.tsx          # Entry point
  ├── package.json           # Dependencies and scripts
  └── tsconfig.json          # TypeScript configuration
 api/
- └── AzDevOpsApi/           # .NET backend
+ └── AzDevOpsApi/           # .NET backend with Jira integration
+     ├── Controllers/       # API endpoints
+     ├── Services/          # Business logic and external API calls
+     └── Models/            # Data models and DTOs
 ```
+
+### Architecture Highlights
+
+- **Shared Components**: Reusable UI components eliminate code duplication
+- **Custom Hooks**: `useBuilds` and `useJira` provide centralized data management
+- **View Organization**: Main pages organized in `components/views/` for clarity
+- **Type Safety**: Comprehensive TypeScript interfaces throughout
+- **Modular Design**: Clear separation between views, components, and utilities
 
 ---
 
+## Recent Updates & Improvements
+
+### 🎯 Latest Features (2025)
+
+- **Jira Integration**: 
+  - Automatic detection of Jira ticket references in build tags
+  - Support for various formats: "XEN-123", "xen-456", "Xen-789"
+  - Clickable status badges linking directly to Jira tickets
+  - Real-time ticket status display with color coding
+
+- **Enhanced UI/UX**:
+  - Improved column layout with Tags and Jira Status positioning
+  - Clickable Jira status elements for better user interaction
+  - Enhanced build table with pipeline name display in Release View
+  - Consistent filtering and sorting across all views
+
+- **Code Architecture Improvements**:
+  - **Eliminated Code Duplication**: Refactored BuildsView and ReleaseView to use shared components
+  - **Created Shared Components**: BuildsTable, BuildFilters, and utility functions
+  - **Custom Hooks**: useBuilds hook for centralized data management
+  - **Better Organization**: Moved all main views to `components/views/` folder
+  - **Type Safety**: Enhanced TypeScript interfaces for better development experience
+
+- **Performance & Maintainability**:
+  - Reduced component code from ~550 lines to ~50 lines through shared architecture
+  - Centralized build data processing and filtering logic
+  - Improved test coverage with updated component structure
+  - Enhanced error handling and loading states
 
 ---
 
 ## Testing
 
-This project includes three types of tests:
+This project includes comprehensive testing at multiple levels to ensure reliability and maintainability:
 
 ### 1. .NET API Tests
 
 Run all backend (API) tests using the .NET CLI:
 
 ```bash
-cd ../api/AzDevOpsApi
+cd api/AzDevOpsApi
 dotnet test
 ```
-This will build and run all unit and integration tests for the API.
+This will build and run all unit and integration tests for the API, including Jira integration endpoints.
 
 ### 2. React Unit/Component Tests
 
@@ -147,7 +238,11 @@ Run all React (frontend) tests using:
 ```bash
 npm test
 ```
-This launches the test runner in interactive watch mode for all React unit and component tests.
+This launches the test runner in interactive watch mode for all React unit and component tests, including:
+- Component rendering tests
+- Jira utility function tests (`jiraUtils.test.ts`)
+- Shared component tests
+- Hook tests
 
 ### 3. Playwright End-to-End Tests
 
@@ -164,15 +259,17 @@ For UI mode (visual debugging):
 ```bash
 npm run test:e2e:ui
 ```
-Playwright tests simulate real user interactions and verify the app end-to-end, using mock data by default.
+Playwright tests simulate real user interactions and verify the app end-to-end, including:
+- Navigation between views
+- Build filtering and sorting
+- Jira integration display
+- Configuration management
 
----
+### Test Coverage
 
-## Learn More
-
-- [React Documentation](https://reactjs.org/)
-- [TypeScript Documentation](https://www.typescriptlang.org/)
-- [Material-UI Documentation](https://mui.com/)
-- [Azure DevOps REST API](https://learn.microsoft.com/en-us/rest/api/azure/devops/)
+- **Backend**: Controllers, services, and data models
+- **Frontend**: Components, hooks, utilities, and integration flows  
+- **E2E**: Complete user workflows across all four main views
+- **Mock Data**: Comprehensive mock services for testing without external dependencies
 
 ---
