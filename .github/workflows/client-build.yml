@@ -32,6 +32,9 @@ jobs:
     
     - name: Install dependencies
       run: npm ci
+
+    - name: Install Playwright CTRF reporter
+      run: npm install --save-dev playwright-ctrf-json-reporter
     
     - name: Create .env file for tests
       run: |
@@ -72,7 +75,18 @@ jobs:
           client/playwright-report/
           client/test-results/
         retention-days: 30
-    
+
+    - name: Upload CTRF report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: ctrf-report
+        path: ctrf/ctrf-report.json
+        retention-days: 30
+
+    - name: Publish Test Summary Results
+      run: npx github-actions-ctrf ctrf/ctrf-report.json
+
     - name: Upload Test Results
       uses: actions/upload-artifact@v4
       if: always()
