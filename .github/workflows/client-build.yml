@@ -50,6 +50,32 @@ jobs:
         CI: true
         NODE_OPTIONS: --experimental-vm-modules
     
+    - name: Generate coverage summary
+      run: |
+        echo "## 📊 Test Coverage Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "Coverage report generated successfully!" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Display test results summary
+        if [ -f coverage/lcov.info ]; then
+          echo "✅ **Coverage files generated:**" >> $GITHUB_STEP_SUMMARY
+          echo "- HTML Report: \`coverage/lcov-report/index.html\`" >> $GITHUB_STEP_SUMMARY
+          echo "- LCOV Report: \`coverage/lcov.info\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Cobertura Report: \`coverage/cobertura-coverage.xml\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Try to extract some basic coverage info
+          echo "📈 **Quick Coverage Stats:**" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          grep -A 10 "All files" coverage/lcov-report/index.html | grep -o '[0-9]*\.[0-9]*%' | head -4 | awk 'NR==1{print "Statements: " $1} NR==2{print "Branches:   " $1} NR==3{print "Functions:  " $1} NR==4{print "Lines:      " $1}' >> $GITHUB_STEP_SUMMARY || echo "Coverage stats extraction failed" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ Coverage report not found" >> $GITHUB_STEP_SUMMARY
+        fi
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "📁 **Full coverage report available in build artifacts**" >> $GITHUB_STEP_SUMMARY
+    
     - name: Build application
       run: npm run build
       env:
