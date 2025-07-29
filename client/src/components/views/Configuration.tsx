@@ -353,6 +353,7 @@ const Configuration: React.FC = () => {
               >
                 Save Configuration
               </Button>
+
               <Button
                 variant="outlined"
                 color="secondary"
