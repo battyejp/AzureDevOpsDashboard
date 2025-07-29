@@ -60,27 +60,5 @@ namespace AzDevOpsApi.Models.AzureDevOps
         
         [JsonPropertyName("tags")]
         public string[] Tags { get; set; } = Array.Empty<string>();
-        
-        public string GetReasonDisplayName()
-        {
-            return Reason switch
-            {
-                BuildReason.None => "None",
-                BuildReason.Manual => "Manual",
-                BuildReason.IndividualCI => "Individual CI",
-                BuildReason.BatchedCI => "Batched CI",
-                BuildReason.Schedule => "Schedule",
-                BuildReason.ScheduleForced => "Schedule Forced",
-                BuildReason.UserCreated => "User Created",
-                BuildReason.ValidateShelveset => "Validate Shelveset",
-                BuildReason.CheckInShelveset => "Check-in Shelveset",
-                BuildReason.PullRequest => "Pull Request",
-                BuildReason.BuildCompletion => "Build Completion",
-                BuildReason.ResourceTrigger => "Resource Trigger",
-                BuildReason.Triggered => "Triggered",
-                BuildReason.All => "All",
-                _ => "Unknown"
-            };
-        }
     }
 }

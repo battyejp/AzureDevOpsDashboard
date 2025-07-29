@@ -94,8 +94,8 @@ export class MockApiService {
       
       // Vary the results for realistic data
       const results = ['succeeded', 'failed', 'partiallySucceeded'];
-      const reasons = ['individualCI', 'manual', 'pullRequest', 'scheduled'];
-      const branches = ['refs/heads/main', 'refs/heads/develop', 'refs/heads/feature/user-auth', 'refs/heads/feature/payment-integration'];
+      const reasons = ['IndividualCI', 'Manual'];
+      const branches = ['refs/heads/main', 'refs/heads/develop'];
       
       const status = i === 0 && Math.random() > 0.7 ? 'inProgress' : 'completed';
       const result = status === 'inProgress' ? undefined : results[Math.floor(Math.random() * results.length)];

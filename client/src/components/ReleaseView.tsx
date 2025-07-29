@@ -102,8 +102,8 @@ const ReleaseView: React.FC = () => {
               pipeline.id,
               1, // Get only the latest build
               'all', // Include all statuses
-              'refs/heads/main' // Only main branch
-              // Don't filter by reason - show latest build regardless of reason
+              'refs/heads/main', // Only main branch
+              'individualCI' // Only individual CI builds    
             );
             
             const latestBuild = builds && builds.length > 0 ? builds[0] : null;
