@@ -30,11 +30,30 @@ The dashboard features three main views, accessible from the navigation bar:
 
 ## Getting Started
 
+
 ### Prerequisites
 
 - Node.js 18+
 - npm or yarn
 - (Optional) .NET 6+ SDK for running the API backend
+
+#### API Setup: Azure DevOps PAT Token
+
+To connect the backend API to your Azure DevOps organization, you need a Personal Access Token (PAT) with appropriate permissions.
+
+1. Go to Azure DevOps > User Settings > Personal Access Tokens.
+2. Create a new token with at least "Read & execute" permissions for Builds, Pipelines, and Projects.
+3. Copy your PAT and update the following fields in `api/AzDevOpsApi/appsettings.Development.json`:
+
+```json
+  "AzureDevOps": {
+    "Organization": "YOUR_ORG_NAME",
+    "PAT": "YOUR_PERSONAL_ACCESS_TOKEN"
+  }
+```
+
+**Never commit real PAT tokens to source control.**
+For production, use environment variables or a secure secrets store.
 
 ### Ways to Run the UI and API
 
