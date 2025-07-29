@@ -36,8 +36,8 @@ const BuildsView: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   // New: branch and reason filter state
-  const [branchFilter, setBranchFilter] = useState<string>('main');
-  const [reasonFilter, setReasonFilter] = useState<string>('individualCI');
+  const [branchFilter, setBranchFilter] = useState<string>(''); // Default to 'All'
+  const [reasonFilter, setReasonFilter] = useState<string>(''); // Default to 'All'
 
   // Reason options (can be extended as needed)
   // Azure DevOps BuildReason enum values

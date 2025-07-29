@@ -1,150 +1,171 @@
-# Azure DevOps Dashb### Installation
+# Azure DevOps Dashboard
 
-``## Available Scripts
+Azure DevOps Dashboard is a modern web application for visualizing and monitoring Azure DevOps pipelines, builds, and deployments. It provides a unified view of your DevOps activity, making it easy to track build health, deployment status, and project configuration.
 
-### `npm st**Note: this is a one-way operation. Once you `eject`, you can't go back!**rt`
+---
 
-Runs the app in development mode with hot reloading.
+## UI Overview
 
-### `npm test`
+The dashboard features three main views, accessible from the navigation bar:
 
-Launches the test runner in interactive watch mode.
+### 1. Deployments View
+- **Purpose:** See the latest deployment status for each pipeline and environment.
+- **Features:** Color-coded status, quick links to build results, and deployment history.
 
-### `npm run test:e2e`
+![Deployments View Screenshot](screenshots\deployments-view.png)
 
-Runs Playwright end-to-end tests in all browsers.
+### 2. Builds View
+- **Purpose:** Browse recent builds for all pipelines, filter by project, branch, or status.
+- **Features:** Build numbers, status, timestamps, and direct links to Azure DevOps.
 
-### `npm run test:e2e:smoke`
+![Builds View Screenshot](screenshots/builds-view.png)
 
-Runs basic smoke tests using Playwright (faster, good for CI).
+### 3. Configuration View
+- **Purpose:** Select which projects and pipelines appear in your dashboard.
+- **Features:** Enable/disable projects and pipelines, filter by environment, and save preferences locally.
 
-### `npm run test:e2e:ui`
+![Configuration View Screenshot](screenshots/configuration-view.png)
 
-Runs Playwright tests with UI mode for debugging.
-
-### `npm run build:with-tests`
-
-Builds the app for production and runs smoke tests.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder, optimized for performance.
-
-### `npm run eject`endencies
-npm install
-
-# Start development server
-npm start
-```act Client
-
-The frontend UI for the Azure DevOps Dashboard project, built with React, TypeScript, and Material-UI.
-
-## Features
-
-- **Modern UI**: Built with Material-UI components for a clean, responsive interface
-- **TypeScript**: Full type safety and improved developer experience
-- **API Integration**: Connects to ASP.NET Core backend for Azure DevOps data
-- **Real-time Updates**: Configurable refresh interval for pipeline status
-- **Filters**: Filter pipelines by project and environment
+---
 
 ## Getting Started
+
 
 ### Prerequisites
 
 - Node.js 18+
 - npm or yarn
-- API server running at http://localhost:5031 (or configured API URL)
+- (Optional) .NET 6+ SDK for running the API backend
 
-### Installation
+#### API Setup: Azure DevOps PAT Token
 
-\\\ash
-# Install dependencies
-npm install
+To connect the backend API to your Azure DevOps organization, you need a Personal Access Token (PAT) with appropriate permissions.
 
-# Start development server
-npm start
-\\\
+1. Go to Azure DevOps > User Settings > Personal Access Tokens.
+2. Create a new token with at least "Read & execute" permissions for Builds, Pipelines, and Projects.
+3. Copy your PAT and update the following fields in `api/AzDevOpsApi/appsettings.Development.json`:
 
-The application will be available at http://localhost:3000.
+```json
+  "AzureDevOps": {
+    "Organization": "YOUR_ORG_NAME",
+    "PAT": "YOUR_PERSONAL_ACCESS_TOKEN"
+  }
+```
 
-## Available Scripts
+**Never commit real PAT tokens to source control.**
+For production, use environment variables or a secure secrets store.
 
-### \
-pm start\
+### Ways to Run the UI and API
 
-Runs the app in development mode with hot reloading.
+#### 1. Using npm/yarn (local development)
 
-### \
-pm test\
+- **Start the client (mock API):**
+  ```bash
+  npm install
+  npm start
+  ```
+  The UI will use mock data (no backend required).
 
-Launches the test runner in interactive watch mode.
+- **Start the client (real API):**
+  ```bash
+  REACT_APP_API_URL=http://localhost:5031/api npm start
+  ```
+  The UI will connect to your running API backend.
 
-### \
-pm run build\
+- **Start the API backend:**
+  ```bash
+  cd ../api/AzDevOpsApi
+  dotnet run
+  ```
 
-Builds the app for production to the \uild\ folder, optimized for performance.
+#### 2. Using Visual Studio Code Tasks
 
-### \
-pm run eject\
+- Open the Command Palette (`Ctrl+Shift+P` or `F1`).
+- Select `Tasks: Run Task`.
+- Choose:
+  - `Start client (mock API)` for mock mode.
+  - `Start client (real API)` to connect to the backend.
+  - `Start API` to run the backend.
 
-**Note: this is a one-way operation. Once you \ject\, you can't go back!**
+#### 3. Using Docker
 
-If you need to customize the build configuration, you can eject from Create React App.
+- **Start everything with Docker Compose:**
+  ```bash
+  docker-compose up --build
+  ```
+  This will build and run both the client and API in containers.
+
+---
 
 ## Project Structure
 
 ```
 client/
- ├── public/                # Static files
+ ├── public/                # Static files (add screenshots here)
  ├── src/
  │   ├── components/        # UI components
- │   │   ├── Dashboard/     # Dashboard layout components
- │   │   ├── Filters/       # Filter components
- │   │   └── StatusGrid/    # Build status grid components
  │   ├── models/            # TypeScript interfaces
  │   ├── services/          # API services
  │   ├── App.tsx            # Main application component
  │   └── index.tsx          # Entry point
  ├── package.json           # Dependencies and scripts
  └── tsconfig.json          # TypeScript configuration
+api/
+ └── AzDevOpsApi/           # .NET backend
 ```
+
+---
+
+
+---
 
 ## Testing
 
-The application includes comprehensive end-to-end testing using Playwright with mock data.
+This project includes three types of tests:
 
-### Running Tests
+### 1. .NET API Tests
+
+Run all backend (API) tests using the .NET CLI:
 
 ```bash
-# Run all Playwright tests
-npm run test:e2e
-
-# Run smoke tests (recommended for CI/local dev)
-npm run test:e2e:smoke
-
-# Run tests with visual debugging
-npm run test:e2e:ui
-
-# Build and test together
-npm run build:with-tests
+cd ../api/AzDevOpsApi
+dotnet test
 ```
+This will build and run all unit and integration tests for the API.
 
-### Test Features
+### 2. React Unit/Component Tests
 
-- **Mock API Responses**: Tests use comprehensive mock data, no backend required
-- **Cross-browser Testing**: Tests run on Chrome, Firefox, and Safari
-- **Multiple Test Suites**: Smoke tests, navigation tests, form validation tests
-- **CI/CD Integration**: Smoke tests run automatically in GitHub Actions
+Run all React (frontend) tests using:
 
-See [TESTING.md](./TESTING.md) for detailed testing documentation.
+```bash
+npm test
+```
+This launches the test runner in interactive watch mode for all React unit and component tests.
 
-## Docker Support
+### 3. Playwright End-to-End Tests
 
-This application is containerized using the `Dockerfile` in this directory. 
-When deployed with Docker Compose, Nginx serves the static build and proxies API requests.
+Run Playwright E2E tests for the UI:
+
+```bash
+npm run test:e2e
+```
+For smoke tests (faster, good for CI/local dev):
+```bash
+npm run test:e2e:smoke
+```
+For UI mode (visual debugging):
+```bash
+npm run test:e2e:ui
+```
+Playwright tests simulate real user interactions and verify the app end-to-end, using mock data by default.
+
+---
 
 ## Learn More
 
 - [React Documentation](https://reactjs.org/)
 - [TypeScript Documentation](https://www.typescriptlang.org/)
 - [Material-UI Documentation](https://mui.com/)
+- [Azure DevOps REST API](https://learn.microsoft.com/en-us/rest/api/azure/devops/)
+
+---

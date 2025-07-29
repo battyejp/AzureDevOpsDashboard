@@ -12,4 +12,10 @@ export const appConfig = {
    * Base API URL for the backend
    */
   apiBaseUrl: process.env.REACT_APP_API_URL || 'http://localhost:5031/api',
+
+  /**
+   * Indicates if the API is mocked
+   * Set via REACT_APP_API_IS_MOCKED environment variable
+   */
+  apiIsMocked: !process.env.REACT_APP_API_URL
 };
