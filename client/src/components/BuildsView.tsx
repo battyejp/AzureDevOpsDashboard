@@ -419,7 +419,9 @@ const BuildsView: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {builds.map((build) => {
+                {[...builds]
+                  .sort((a, b) => b.buildNumber.localeCompare(a.buildNumber, undefined, { numeric: true, sensitivity: 'base' }))
+                  .map((build) => {
                   const projectName = build.project?.name || selectedProject;
                   const orgName = organization;
                   const buildUrl = `https://dev.azure.com/${encodeURIComponent(orgName)}/${encodeURIComponent(projectName)}/_build/results?buildId=${build.id}&view=results`;
