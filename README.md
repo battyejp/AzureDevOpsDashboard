@@ -12,19 +12,19 @@ The dashboard features three main views, accessible from the navigation bar:
 - **Purpose:** See the latest deployment status for each pipeline and environment.
 - **Features:** Color-coded status, quick links to build results, and deployment history.
 
-![Deployments View Screenshot](screenshots\deployments-view.png)
+![Deployments View Screenshot](client\screenshots\deployments-view.png)
 
 ### 2. Builds View
 - **Purpose:** Browse recent builds for all pipelines, filter by project, branch, or status.
 - **Features:** Build numbers, status, timestamps, and direct links to Azure DevOps.
 
-![Builds View Screenshot](screenshots/builds-view.png)
+![Builds View Screenshot](client\screenshots/builds-view.png)
 
 ### 3. Configuration View
 - **Purpose:** Select which projects and pipelines appear in your dashboard.
 - **Features:** Enable/disable projects and pipelines, filter by environment, and save preferences locally.
 
-![Configuration View Screenshot](screenshots/configuration-view.png)
+![Configuration View Screenshot](client\screenshots/configuration-view.png)
 
 ---
 
