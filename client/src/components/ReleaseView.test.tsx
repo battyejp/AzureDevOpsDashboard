@@ -147,7 +147,8 @@ describe('ReleaseView', () => {
         1001, // pipelineId
         1, // count
         'all', // statusFilter
-        'refs/heads/main' // branch filter
+        'refs/heads/main', // branch filter
+        'individualCI' // reason filter
       );
     });
   });

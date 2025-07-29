@@ -4,9 +4,10 @@ Azure DevOps Dashboard is a modern web application for visualizing and monitorin
 
 ---
 
+
 ## UI Overview
 
-The dashboard features three main views, accessible from the navigation bar:
+The dashboard features four main views, accessible from the navigation bar:
 
 ### 1. Deployments View
 - **Purpose:** See the latest deployment status for each pipeline and environment.
@@ -20,7 +21,13 @@ The dashboard features three main views, accessible from the navigation bar:
 
 ![Builds View Screenshot](client/screenshots/builds-view.png)
 
-### 3. Configuration View
+### 3. Release View
+- **Purpose:** See the latest build for each pipeline on the main branch, focused on release candidates (Individual CI builds).
+- **Features:** Shows the most recent qualifying build per pipeline, with build details, branch, reason, and quick links to Azure DevOps.
+
+![Release View Screenshot](client/screenshots/release-view.png)
+
+### 4. Configuration View
 - **Purpose:** Select which projects and pipelines appear in your dashboard.
 - **Features:** Enable/disable projects and pipelines, filter by environment, and save preferences locally.
 
