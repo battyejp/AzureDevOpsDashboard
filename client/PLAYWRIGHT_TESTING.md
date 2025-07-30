@@ -35,7 +35,8 @@ Both files serve different but essential purposes:
 #### 1. Enhanced `smoke.spec.ts`
 - Uncommented and improved existing tests for builds, configuration, and release pages
 - Added proper wait times and enhanced assertions
-- Added screenshot capture for visual verification
+- Added screenshot capture for visual verification with improved naming
+- Screenshots saved as `smoke-{page}-page.png` for easy identification
 
 #### 2. `comprehensive.spec.ts`
 - **Navigation and Routing Tests**: Validates all route transitions
@@ -154,6 +155,41 @@ Tests generate:
 - Screenshots for visual verification
 - Trace files for debugging failed tests
 - CTRF JSON reports for CI integration
+
+### CI Screenshot Visibility Enhancements
+
+Enhanced CI configuration provides multiple ways to view test screenshots:
+
+#### 1. GitHub Actions Summary
+- **Automatic Summary**: Each test run generates a summary showing:
+  - Screenshot count and file sizes
+  - Video count and file sizes (if any)
+  - Direct artifact download instructions
+  - Links to interactive reports
+
+#### 2. Automated PR Comments
+- **Bot Comments**: Automatic comments on PRs with:
+  - List of all generated screenshots and videos
+  - Direct links to workflow artifacts
+  - Step-by-step instructions for accessing files
+  - File size information for quick assessment
+
+#### 3. Organized Artifacts
+- **Enhanced Artifacts**: `playwright-test-results` artifact includes:
+  - `test-results/` - Individual screenshots and videos
+  - `playwright-report/` - Interactive HTML report
+  - `test-artifacts-summary.md` - Complete inventory of test artifacts
+
+#### 4. How to Access Screenshots
+1. **View Workflow Summary**: Click on any workflow run to see immediate overview
+2. **Check PR Comments**: Look for automated bot comments with direct instructions
+3. **Download Artifacts**: Get `playwright-test-results` artifact for full access
+4. **Open Reports**: Use `playwright-report/index.html` for interactive browsing
+
+#### 5. Test Artifact Organization Script
+- **Automatic Organization**: `scripts/organize-test-artifacts.js` runs after tests
+- **Detailed Summaries**: Generates markdown summary with file sizes and descriptions
+- **Console Output**: Provides immediate feedback during CI runs
 
 ## Recommendations
 
