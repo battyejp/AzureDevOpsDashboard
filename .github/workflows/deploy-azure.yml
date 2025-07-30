@@ -106,16 +106,12 @@ jobs:
           --parameters repositoryToken="${{ secrets.GITHUB_TOKEN }}" \
           --query 'properties.outputs' \
           --output json)
-        
         echo "Deployment output: $deployment_output"
-        
         # Extract outputs
         static_web_app_name=$(echo $deployment_output | jq -r '.staticWebAppName.value')
         static_web_app_url=$(echo $deployment_output | jq -r '.staticWebAppUrl.value')
-        
         echo "static-web-app-name=$static_web_app_name" >> $GITHUB_OUTPUT
         echo "static-web-app-url=https://$static_web_app_url" >> $GITHUB_OUTPUT
-        
         echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "**Environment:** ${{ github.event.inputs.environment || 'prod' }}" >> $GITHUB_STEP_SUMMARY
