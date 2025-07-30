@@ -70,7 +70,7 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment || 'prod' }}
+    # environment: ${{ github.event.inputs.environment || 'prod' }}
     
     steps:
     - uses: actions/checkout@v4
