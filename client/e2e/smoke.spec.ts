@@ -64,8 +64,11 @@ test.describe('Basic Smoke Tests', () => {
     const navigation = page.getByRole('link', { name: 'Configuration' });
     await expect(navigation).toBeVisible();
     
-    // Check for organization field
-    await expect(page.getByText('Azure DevOps Organization')).toBeVisible();
+    // Check for configuration page content
+    await expect(page.getByText('Configure your default settings for the Azure DevOps Dashboard')).toBeVisible();
+    
+    // Check for default project field
+    await expect(page.getByText('Default Project')).toBeVisible();
     
     // Wait for any content to load and take screenshot
     await page.waitForTimeout(1000);
