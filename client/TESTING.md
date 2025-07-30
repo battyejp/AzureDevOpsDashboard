@@ -4,13 +4,18 @@ This document describes the end-to-end testing setup for the Azure DevOps Dashbo
 
 ## Overview
 
-The client application includes Playwright-based end-to-end tests that use mock data to test the application's functionality without requiring a live backend API.
+The client application includes comprehensive Playwright-based end-to-end tests that use mock data to test the application's functionality without requiring a live backend API.
+
+For detailed information about the expanded test coverage, see [PLAYWRIGHT_TESTING.md](PLAYWRIGHT_TESTING.md).
 
 ## Test Structure
 
 ### Test Files
 
 - `e2e/smoke.spec.ts` - Basic smoke tests that verify core functionality
+- `e2e/comprehensive.spec.ts` - Comprehensive test suite covering all major features
+- `e2e/interactive.spec.ts` - Interactive features and data filtering tests
+- `e2e/mock-validation.spec.ts` - Mock API validation tests
 
 ### Mock Data
 
@@ -45,6 +50,18 @@ npm run test:e2e
 
 # Run only smoke tests (fastest, good for CI)
 npm run test:e2e:smoke
+
+# Run comprehensive test suite
+npm run test:e2e:comprehensive
+
+# Run interactive feature tests
+npm run test:e2e:interactive
+
+# Run mock API validation tests
+npm run test:e2e:validation
+
+# Run all main test suites
+npm run test:e2e:all
 
 # Run tests with UI (for debugging)
 npm run test:e2e:ui

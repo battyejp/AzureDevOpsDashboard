@@ -31,40 +31,67 @@ test.describe('Basic Smoke Tests', () => {
     await page.screenshot({ path: 'test-results/home-page.png', fullPage: true });
   });
 
-//   test('should navigate to builds page and show mock data', async ({ page }) => {
-//     await page.goto('/builds');
+  test('should navigate to builds page and show mock data', async ({ page }) => {
+    await page.goto('/builds');
     
-//     // Check URL
-//     await expect(page).toHaveURL(/.*\/builds/);
+    // Check URL
+    await expect(page).toHaveURL(/.*\/builds/);
     
-//     // Check if we can find the builds heading or navigation
-//     const navigation = page.getByRole('link', { name: 'Builds' });
-//     await expect(navigation).toBeVisible();
+    // Check if we can find the builds heading or navigation
+    const navigation = page.getByRole('link', { name: 'Builds' });
+    await expect(navigation).toBeVisible();
     
-//     // Wait for mock data to populate
-//     await page.waitForTimeout(1000);
+    // Wait for mock data to populate
+    await page.waitForTimeout(2000);
     
-//     // Check for filters (indicating page is functional)
-//     await expect(page.getByText('Filters')).toBeVisible();
+    // Check for filters (indicating page is functional)
+    await expect(page.getByText('Filters')).toBeVisible();
     
-//     await page.screenshot({ path: 'test-results/builds-page.png', fullPage: true });
-//   });
+    // Check for project combobox
+    const projectCombobox = page.locator('[role="combobox"]').first();
+    await expect(projectCombobox).toBeVisible();
+    
+    await page.screenshot({ path: 'test-results/builds-page.png', fullPage: true });
+  });
 
-//   test('should navigate to configuration page', async ({ page }) => {
-//     await page.goto('/configuration');
+  test('should navigate to configuration page', async ({ page }) => {
+    await page.goto('/configuration');
     
-//     // Check URL
-//     await expect(page).toHaveURL(/.*\/configuration/);
+    // Check URL
+    await expect(page).toHaveURL(/.*\/configuration/);
     
-//     // Check if we can find navigation
-//     const navigation = page.getByRole('link', { name: 'Configuration' });
-//     await expect(navigation).toBeVisible();
+    // Check if we can find navigation
+    const navigation = page.getByRole('link', { name: 'Configuration' });
+    await expect(navigation).toBeVisible();
     
-//     // Check for organization field
-//     await expect(page.getByText('Azure DevOps Organization')).toBeVisible();
+    // Check for organization field
+    await expect(page.getByText('Azure DevOps Organization')).toBeVisible();
     
-//     // Wait for any content to load and take screenshot
-//     await page.waitForTimeout(1000);
-//     await page.screenshot({ path: 'test-results/configuration-page.png', fullPage: true });
-//   });
+    // Wait for any content to load and take screenshot
+    await page.waitForTimeout(1000);
+    await page.screenshot({ path: 'test-results/configuration-page.png', fullPage: true });
+  });
+
+  test('should navigate to release page and display mock data', async ({ page }) => {
+    await page.goto('/release');
+    
+    // Check URL
+    await expect(page).toHaveURL(/.*\/release/);
+    
+    // Check navigation link is highlighted
+    const navigation = page.getByRole('link', { name: 'Release' });
+    await expect(navigation).toBeVisible();
+    
+    // Wait for data to load
+    await page.waitForTimeout(2000);
+    
+    // Check for filters section
+    await expect(page.getByText('Filters')).toBeVisible();
+    
+    // Check for project selection
+    const projectCombobox = page.locator('[role="combobox"]').first();
+    await expect(projectCombobox).toBeVisible();
+    
+    await page.screenshot({ path: 'test-results/release-page.png', fullPage: true });
+  });
 });
