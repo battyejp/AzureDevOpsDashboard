@@ -4,7 +4,7 @@ targetScope = 'subscription'
 param environment string = 'prod'
 
 @description('The location where resources will be deployed')
-param location string = 'eastus'
+param location string = 'eastus2'
 
 @description('The name of the application')
 param appName string = 'azdevops-dashboard'
@@ -20,9 +20,8 @@ param branch string = 'main'
 param repositoryToken string
 
 // Variables
-var resourceGroupName = 'rg-${appName}-${environment}'
+var resourceGroupName = 'rg-${appName}-${environment}-v2'
 var staticWebAppName = '${appName}-${environment}'
-var staticWebAppLocation = 'eastus2' // Static Web Apps supported region
 var tags = {
   Environment: environment
   Application: appName
@@ -42,7 +41,7 @@ module staticWebApp 'modules/staticwebapp.bicep' = {
   scope: resourceGroup
   params: {
     staticWebAppName: staticWebAppName
-    location: staticWebAppLocation
+    location: location
     tags: tags
     repositoryUrl: repositoryUrl
     branch: branch
