@@ -98,6 +98,7 @@ jobs:
     - name: Deploy Infrastructure
       id: deploy-infra
       run: |
+        set -e
         deployment_output=$(az deployment group create \
           --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
           --template-file infra/main.bicep \
@@ -107,9 +108,17 @@ jobs:
           --query 'properties.outputs' \
           --output json)
         echo "Deployment output: $deployment_output"
-        # Extract outputs
-        static_web_app_name=$(echo $deployment_output | jq -r '.staticWebAppName.value')
-        static_web_app_url=$(echo $deployment_output | jq -r '.staticWebAppUrl.value')
+        if [ -z "$deployment_output" ]; then
+          echo "ERROR: Deployment output is empty. The deployment may have failed."
+          exit 1
+        fi
+        # Extract outputs with error fallback
+        static_web_app_name=$(echo "$deployment_output" | jq -r '.staticWebAppName.value' || echo "JQ_ERROR")
+        static_web_app_url=$(echo "$deployment_output" | jq -r '.staticWebAppUrl.value' || echo "JQ_ERROR")
+        if [ "$static_web_app_name" = "JQ_ERROR" ] || [ "$static_web_app_url" = "JQ_ERROR" ]; then
+          echo "ERROR: Failed to parse deployment output with jq. Raw output: $deployment_output"
+          exit 1
+        fi
         echo "static-web-app-name=$static_web_app_name" >> $GITHUB_OUTPUT
         echo "static-web-app-url=https://$static_web_app_url" >> $GITHUB_OUTPUT
         echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
