@@ -329,5 +329,150 @@ namespace AzDevOpsApi.Tests.Controllers
             await _azureDevOpsService.Received(1)
                 .GetBuildTimelineAsync(project, "test-org", "test-pat", buildId);
         }
+
+        [Fact]
+        public async Task GetBuildTimeline_WithTypeFilter_FiltersRecordsByType()
+        {
+            // Arrange
+            const int buildId = 123;
+            const string project = "TestProject";
+            const string filterType = "Task";
+            
+            var timeline = new AzureDevOpsTimelineResponse
+            {
+                Id = "timeline-1",
+                Records = new AzureDevOpsTimelineRecord[]
+                {
+                    new AzureDevOpsTimelineRecord { Id = "record-1", Type = "Task", State = "completed" },
+                    new AzureDevOpsTimelineRecord { Id = "record-2", Type = "Job", State = "completed" },
+                    new AzureDevOpsTimelineRecord { Id = "record-3", Type = "Task", State = "running" }
+                }
+            };
+            
+            _azureDevOpsService
+                .GetBuildTimelineAsync(project, "test-org", "test-pat", buildId)
+                .Returns(timeline);
+
+            // Act
+            var result = await _controller.GetBuildTimeline(buildId, project, filterType);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            var returnedTimeline = Assert.IsType<AzureDevOpsTimelineResponse>(okResult.Value);
+            
+            Assert.Equal(2, returnedTimeline.Records?.Length);
+            Assert.All(returnedTimeline.Records!, record => Assert.Equal("Task", record.Type));
+        }
+
+        [Fact]
+        public async Task GetBuildTimeline_WithStateFilter_FiltersRecordsByState()
+        {
+            // Arrange
+            const int buildId = 123;
+            const string project = "TestProject";
+            const string filterState = "completed";
+            
+            var timeline = new AzureDevOpsTimelineResponse
+            {
+                Id = "timeline-1",
+                Records = new AzureDevOpsTimelineRecord[]
+                {
+                    new AzureDevOpsTimelineRecord { Id = "record-1", Type = "Task", State = "completed" },
+                    new AzureDevOpsTimelineRecord { Id = "record-2", Type = "Job", State = "running" },
+                    new AzureDevOpsTimelineRecord { Id = "record-3", Type = "Task", State = "completed" }
+                }
+            };
+            
+            _azureDevOpsService
+                .GetBuildTimelineAsync(project, "test-org", "test-pat", buildId)
+                .Returns(timeline);
+
+            // Act
+            var result = await _controller.GetBuildTimeline(buildId, project, null, filterState);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            var returnedTimeline = Assert.IsType<AzureDevOpsTimelineResponse>(okResult.Value);
+            
+            Assert.Equal(2, returnedTimeline.Records?.Length);
+            Assert.All(returnedTimeline.Records!, record => Assert.Equal("completed", record.State));
+        }
+
+        [Fact]
+        public async Task GetBuildTimeline_WithBothTypeAndStateFilter_FiltersRecordsByBoth()
+        {
+            // Arrange
+            const int buildId = 123;
+            const string project = "TestProject";
+            const string filterType = "Task";
+            const string filterState = "completed";
+            
+            var timeline = new AzureDevOpsTimelineResponse
+            {
+                Id = "timeline-1",
+                Records = new AzureDevOpsTimelineRecord[]
+                {
+                    new AzureDevOpsTimelineRecord { Id = "record-1", Type = "Task", State = "completed" },
+                    new AzureDevOpsTimelineRecord { Id = "record-2", Type = "Job", State = "completed" },
+                    new AzureDevOpsTimelineRecord { Id = "record-3", Type = "Task", State = "running" },
+                    new AzureDevOpsTimelineRecord { Id = "record-4", Type = "Task", State = "completed" }
+                }
+            };
+            
+            _azureDevOpsService
+                .GetBuildTimelineAsync(project, "test-org", "test-pat", buildId)
+                .Returns(timeline);
+
+            // Act
+            var result = await _controller.GetBuildTimeline(buildId, project, filterType, filterState);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            var returnedTimeline = Assert.IsType<AzureDevOpsTimelineResponse>(okResult.Value);
+            
+            Assert.Equal(2, returnedTimeline.Records?.Length);
+            Assert.All(returnedTimeline.Records!, record => 
+            {
+                Assert.Equal("Task", record.Type);
+                Assert.Equal("completed", record.State);
+            });
+        }
+
+        [Fact]
+        public async Task GetBuildTimeline_WithFilters_LogsFilteringInformation()
+        {
+            // Arrange
+            const int buildId = 123;
+            const string project = "TestProject";
+            const string filterType = "Task";
+            const string filterState = "completed";
+            
+            var timeline = new AzureDevOpsTimelineResponse
+            {
+                Id = "timeline-1",
+                Records = new AzureDevOpsTimelineRecord[]
+                {
+                    new AzureDevOpsTimelineRecord { Id = "record-1", Type = "Task", State = "completed" }
+                }
+            };
+            
+            _azureDevOpsService
+                .GetBuildTimelineAsync(project, "test-org", "test-pat", buildId)
+                .Returns(timeline);
+
+            // Act
+            await _controller.GetBuildTimeline(buildId, project, filterType, filterState);
+
+            // Assert
+            _logger.Received(1).Log(
+                LogLevel.Information,
+                Arg.Any<EventId>(),
+                Arg.Is<object>(o => o.ToString()!.Contains("Filtered timeline records for build 123") &&
+                                   o.ToString()!.Contains("type 'Task'") &&
+                                   o.ToString()!.Contains("state 'completed'") &&
+                                   o.ToString()!.Contains("1 records")),
+                null,
+                Arg.Any<Func<object, Exception?, string>>());
+        }
     }
 }

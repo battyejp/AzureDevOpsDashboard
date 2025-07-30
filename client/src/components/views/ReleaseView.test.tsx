@@ -2,12 +2,12 @@ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import ReleaseView from './ReleaseView';
-import { ApiService } from '../services/apiService';
-import { ConfigService } from '../services/configService';
+import { ApiService } from '../../services/apiService';
+import { ConfigService } from '../../services/configService';
 
 // Mock the services
-jest.mock('../services/apiService');
-jest.mock('../services/configService');
+jest.mock('../../services/apiService');
+jest.mock('../../services/configService');
 
 const mockApiService = ApiService as jest.Mocked<typeof ApiService>;
 const mockConfigService = ConfigService as jest.Mocked<typeof ConfigService>;
@@ -121,7 +121,7 @@ describe('ReleaseView', () => {
 
   it('handles API connectivity errors gracefully', async () => {
     mockApiService.testApiConnectivity.mockResolvedValue(false);
-
+    
     render(
       <BrowserRouter>
         <ReleaseView />
