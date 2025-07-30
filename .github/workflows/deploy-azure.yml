@@ -97,113 +97,37 @@ jobs:
     
     - name: Deploy Infrastructure
       id: deploy-infra
+      uses: azure/arm-deploy@v1
+      with:
+        subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        resourceGroupName: ${{ env.AZURE_RESOURCE_GROUP }}
+        template: infra/main.bicep
+        parameters: |
+          environment=${{ github.event.inputs.environment || 'prod' }}
+          repositoryUrl=https://github.com/${{ github.repository }}
+          repositoryToken=${{ secrets.GITHUB_TOKEN }}
+        deploymentName: azdevops-dashboard-${{ github.run_number }}
+        scope: resourcegroup
+        failOnStdErr: false
+    
+    - name: Process deployment outputs
+      id: process-outputs
       run: |
-        set -e
-        
-        # Generate unique deployment name to avoid conflicts
-        DEPLOYMENT_NAME="azdevops-dashboard-$(date +%s)"
-        echo "🚀 Starting infrastructure deployment with name: $DEPLOYMENT_NAME"
-        
-        # Use a completely different approach - deploy without any output
-        # Redirect all output to avoid stream consumption issues
-        echo "Starting deployment..."
-        az deployment group create \
-          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-          --template-file infra/main.bicep \
-          --parameters environment=${{ github.event.inputs.environment || 'prod' }} \
-          --parameters repositoryUrl="https://github.com/${{ github.repository }}" \
-          --parameters repositoryToken="${{ secrets.GITHUB_TOKEN }}" \
-          --name "$DEPLOYMENT_NAME" \
-          --no-wait \
-          --only-show-errors > /dev/null 2>&1 || {
-            echo "❌ Deployment initiation failed"
-            exit 1
-          }
-        
-        echo "✅ Deployment started successfully! Waiting for completion..."
-        
-        # Wait for deployment to complete and check status
-        max_attempts=60  # 10 minutes max (60 * 10 seconds)
-        attempt=0
-        
-        while [ $attempt -lt $max_attempts ]; do
-          echo "⏳ Checking deployment status (attempt $((attempt + 1))/$max_attempts)..."
-          
-          # Check deployment status with error suppression
-          deployment_state=""
-          if az deployment group show \
-            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --name "$DEPLOYMENT_NAME" \
-            --query 'properties.provisioningState' \
-            --output tsv > /tmp/deployment_state.txt 2>/dev/null; then
-            deployment_state=$(cat /tmp/deployment_state.txt)
-          else
-            deployment_state="NotFound"
-          fi
-          
-          echo "Current deployment state: $deployment_state"
-          
-          if [ "$deployment_state" = "Succeeded" ]; then
-            echo "🎉 Deployment completed successfully!"
-            break
-          elif [ "$deployment_state" = "Failed" ] || [ "$deployment_state" = "Canceled" ]; then
-            echo "❌ Deployment failed with state: $deployment_state"
-            # Get error details safely
-            az deployment group show \
-              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-              --name "$DEPLOYMENT_NAME" \
-              --query 'properties.error' \
-              --output json > /tmp/deployment_error.txt 2>/dev/null || true
-            if [ -f /tmp/deployment_error.txt ]; then
-              echo "Error details:"
-              cat /tmp/deployment_error.txt
-            fi
-            exit 1
-          elif [ "$deployment_state" = "NotFound" ]; then
-            echo "⚠️ Deployment not found, retrying..."
-          else
-            echo "⏳ Deployment in progress (state: $deployment_state), waiting..."
-          fi
-          
-          sleep 10
-          attempt=$((attempt + 1))
-        done
-        
-        if [ $attempt -eq $max_attempts ]; then
-          echo "❌ Deployment timed out after 10 minutes"
-          exit 1
-        fi
-        
-        # Now get the outputs safely using file-based approach
-        echo "📋 Retrieving deployment outputs..."
-        if az deployment group show \
-          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-          --name "$DEPLOYMENT_NAME" \
-          --query 'properties.outputs' \
-          --output json > /tmp/deployment_output.txt 2>/dev/null; then
-          deployment_output=$(cat /tmp/deployment_output.txt)
-        else
-          echo "❌ ERROR: Failed to retrieve deployment outputs"
-          exit 1
-        fi
-        
-        echo "Raw deployment output: $deployment_output"
-        
-        # Validate output is not empty
-        if [ -z "$deployment_output" ] || [ "$deployment_output" = "null" ]; then
-          echo "❌ ERROR: Deployment output is empty or null. The deployment may have failed."
-          exit 1
-        fi
-        
-        # Extract outputs with error handling
-        static_web_app_name=$(echo "$deployment_output" | jq -r '.staticWebAppName.value // "ERROR"')
-        static_web_app_url=$(echo "$deployment_output" | jq -r '.staticWebAppUrl.value // "ERROR"')
+        # Extract outputs from the ARM deployment
+        static_web_app_name="${{ steps.deploy-infra.outputs.staticWebAppName }}"
+        static_web_app_url="${{ steps.deploy-infra.outputs.staticWebAppUrl }}"
         
         echo "Extracted static web app name: $static_web_app_name"
         echo "Extracted static web app URL: $static_web_app_url"
         
-        if [ "$static_web_app_name" = "ERROR" ] || [ "$static_web_app_url" = "ERROR" ] || [ "$static_web_app_name" = "null" ] || [ "$static_web_app_url" = "null" ]; then
-          echo "❌ ERROR: Failed to extract deployment outputs. Raw output: $deployment_output"
+        # Validate outputs
+        if [ -z "$static_web_app_name" ] || [ "$static_web_app_name" = "null" ]; then
+          echo "❌ ERROR: Static Web App name is empty or null"
+          exit 1
+        fi
+        
+        if [ -z "$static_web_app_url" ] || [ "$static_web_app_url" = "null" ]; then
+          echo "❌ ERROR: Static Web App URL is empty or null"
           exit 1
         fi
         
@@ -237,7 +161,7 @@ jobs:
         if [ "${{ job.status }}" = "success" ]; then
           echo "## ✅ Deployment Successful!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "🌐 **Live URL:** ${{ steps.deploy-infra.outputs.static-web-app-url }}" >> $GITHUB_STEP_SUMMARY
+          echo "🌐 **Live URL:** ${{ steps.process-outputs.outputs.static-web-app-url }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Next Steps:" >> $GITHUB_STEP_SUMMARY
           echo "1. Visit your deployed application" >> $GITHUB_STEP_SUMMARY
@@ -250,8 +174,8 @@ jobs:
         fi
     
     outputs:
-      static-web-app-url: ${{ steps.deploy-infra.outputs.static-web-app-url }}
-      static-web-app-name: ${{ steps.deploy-infra.outputs.static-web-app-name }}
+      static-web-app-url: ${{ steps.process-outputs.outputs.static-web-app-url }}
+      static-web-app-name: ${{ steps.process-outputs.outputs.static-web-app-name }}
 
   # Run smoke tests against the deployed application
   smoke-test:
