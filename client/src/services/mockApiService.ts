@@ -292,17 +292,19 @@ export class MockApiService {
         }
       }
       
-      // More diverse and realistic tag generation
+      // Ensure all builds have a Xen- tag for Jira integration testing
       let tags: string[] = [];
+      const xenTicketNumber = Math.floor(Math.random() * 300) + 100;
+      tags = [`Xen-${xenTicketNumber}`];
+      
+      // Optionally add additional tags for variety
       const tagRand = Math.random();
       if (tagRand > 0.85) {
-        tags = ['hotfix'];
-      } else if (tagRand > 0.6) {
-        tags = [`Xen${Math.floor(Math.random() * 300) + 100}`];
+        tags.push('hotfix');
       } else if (tagRand > 0.8) {
-        tags = [`release-candidate`];
+        tags.push('release-candidate');
       } else if (tagRand > 0.9) {
-        tags = [`security-scan`];
+        tags.push('security-scan');
       }
       
       builds.push({
