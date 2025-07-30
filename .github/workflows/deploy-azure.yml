@@ -89,15 +89,107 @@ jobs:
 
     - name: Deploy Infrastructure
       id: deploy-infra
-      uses: azure/arm-deploy@v1
-      with:
-        subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-        template: infra/main.bicep
-        parameters: environment=${{ github.event.inputs.environment || 'prod' }} location=${{ env.AZURE_LOCATION }} repositoryUrl=https://github.com/${{ github.repository }} repositoryToken=${{ secrets.GITHUB_TOKEN }}
-        deploymentName: azdevops-dashboard-${{ github.run_number }}
-        scope: subscription
-        region: ${{ env.AZURE_LOCATION }}
-        failOnStdErr: false
+      run: |
+        # Deploy Infrastructure using Azure REST API (avoids Azure CLI stream consumption issues)
+        SUBSCRIPTION_ID="${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+        DEPLOYMENT_NAME="azdevops-dashboard-${{ github.run_number }}"
+        LOCATION="${{ env.AZURE_LOCATION }}"
+        
+        echo "Starting deployment via Azure REST API..."
+        echo "Subscription: $SUBSCRIPTION_ID"
+        echo "Deployment: $DEPLOYMENT_NAME"
+        echo "Location: $LOCATION"
+        
+        # Get access token
+        ACCESS_TOKEN=$(az account get-access-token --query accessToken -o tsv)
+        
+        # Build Bicep template to ARM JSON
+        echo "Converting Bicep to ARM template..."
+        az bicep build --file infra/main.bicep --outfile main.json
+        
+        # Create deployment JSON payload
+        cat > deployment.json << 'EOF'
+        {
+          "location": "$LOCATION",
+          "properties": {
+            "template": TEMPLATE_PLACEHOLDER,
+            "parameters": {
+              "environment": {
+                "value": "prod"
+              },
+              "location": {
+                "value": "$LOCATION"
+              },
+              "repositoryUrl": {
+                "value": "https://github.com/${{ github.repository }}"
+              },
+              "repositoryToken": {
+                "value": "${{ secrets.GITHUB_TOKEN }}"
+              }
+            },
+            "mode": "Incremental"
+          }
+        }
+        EOF
+        
+        # Replace template placeholder with actual template content
+        sed -i "s|\"TEMPLATE_PLACEHOLDER\"|$(cat main.json | jq -c .)|g" deployment.json
+        sed -i "s|\$LOCATION|$LOCATION|g" deployment.json
+        
+        # Start deployment using REST API
+        DEPLOYMENT_URL="https://management.azure.com/subscriptions/$SUBSCRIPTION_ID/providers/Microsoft.Resources/deployments/$DEPLOYMENT_NAME?api-version=2021-04-01"
+        
+        echo "Creating deployment..."
+        RESPONSE=$(curl -s -w "%{http_code}" -X PUT \
+          -H "Authorization: Bearer $ACCESS_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d @deployment.json \
+          "$DEPLOYMENT_URL")
+        
+        HTTP_CODE=$(echo "$RESPONSE" | tail -c 4)
+        RESPONSE_BODY=$(echo "$RESPONSE" | head -c -4)
+        
+        echo "HTTP Response Code: $HTTP_CODE"
+        
+        if [ "$HTTP_CODE" != "201" ] && [ "$HTTP_CODE" != "200" ]; then
+          echo "❌ Failed to create deployment. Response:"
+          echo "$RESPONSE_BODY" | jq .
+          exit 1
+        fi
+        
+        echo "✅ Deployment initiated successfully"
+        
+        # Wait for deployment to complete
+        echo "Waiting for deployment to complete..."
+        for i in {1..60}; do
+          DEPLOYMENT_STATUS=$(curl -s -H "Authorization: Bearer $ACCESS_TOKEN" "$DEPLOYMENT_URL" | jq -r '.properties.provisioningState // "Unknown"')
+          echo "[$i/60] Deployment status: $DEPLOYMENT_STATUS"
+          
+          if [ "$DEPLOYMENT_STATUS" = "Succeeded" ]; then
+            echo "🎉 Deployment completed successfully!"
+            # Get outputs
+            OUTPUTS=$(curl -s -H "Authorization: Bearer $ACCESS_TOKEN" "$DEPLOYMENT_URL" | jq -r '.properties.outputs')
+            echo "staticWebAppUrl=$(echo "$OUTPUTS" | jq -r '.staticWebAppUrl.value // ""')" >> $GITHUB_OUTPUT
+            echo "staticWebAppName=$(echo "$OUTPUTS" | jq -r '.staticWebAppName.value // ""')" >> $GITHUB_OUTPUT
+            echo "staticWebAppToken=$(echo "$OUTPUTS" | jq -r '.staticWebAppToken.value // ""')" >> $GITHUB_OUTPUT
+            echo "resourceGroupName=$(echo "$OUTPUTS" | jq -r '.resourceGroupName.value // ""')" >> $GITHUB_OUTPUT
+            echo "deployment_status=success" >> $GITHUB_OUTPUT
+            break
+          elif [ "$DEPLOYMENT_STATUS" = "Failed" ]; then
+            echo "❌ Deployment failed!"
+            curl -s -H "Authorization: Bearer $ACCESS_TOKEN" "$DEPLOYMENT_URL" | jq '.properties.error'
+            echo "deployment_status=failed" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+          sleep 30
+        done
+        
+        if [ "$DEPLOYMENT_STATUS" != "Succeeded" ]; then
+          echo "⏱️ Deployment timed out or failed"
+          echo "deployment_status=timeout" >> $GITHUB_OUTPUT
+          exit 1
+        fi
     
     - name: Process deployment outputs
       id: process-outputs
