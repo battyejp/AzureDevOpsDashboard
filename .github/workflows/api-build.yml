@@ -47,12 +47,50 @@ jobs:
           api/**/TestResults/**/*.trx
         retention-days: 30
     
-    - name: Upload Code Coverage
+    - name: Install ReportGenerator
+      run: dotnet tool install -g dotnet-reportgenerator-globaltool
+    
+    - name: Generate Coverage Report
+      run: |
+        reportgenerator \
+          -reports:"**/TestResults/**/coverage.cobertura.xml" \
+          -targetdir:"./coverage-report" \
+          -reporttypes:"Html;TextSummary" \
+          -classfilters:"-Program" \
+          -verbosity:Info
+    
+    - name: Display Coverage Summary
+      run: |
+        echo "=== Code Coverage Summary ==="
+        cat ./coverage-report/Summary.txt
+        echo "============================="
+    
+    - name: Check Coverage Threshold
+      run: |
+        # Extract coverage percentage from the summary report
+        COVERAGE=$(grep "Line coverage:" ./coverage-report/Summary.txt | grep -oE '[0-9]+\.[0-9]+' | head -1)
+        echo "Detected coverage: ${COVERAGE}%"
+        
+        # Convert to integer for comparison (remove decimal point)
+        COVERAGE_INT=$(echo "$COVERAGE" | sed 's/\.//')
+        THRESHOLD_INT=900  # 90.0 -> 900
+        
+        if [ "$COVERAGE_INT" -lt "$THRESHOLD_INT" ]; then
+          echo "❌ Code coverage ($COVERAGE%) is below the required 90% threshold!"
+          echo "Please add more tests to increase code coverage."
+          exit 1
+        else
+          echo "✅ Code coverage ($COVERAGE%) meets the required 90% threshold."
+        fi
+    
+    - name: Upload Code Coverage Report
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: api-code-coverage
-        path: api/**/TestResults/**/coverage.cobertura.xml
+        name: api-code-coverage-report
+        path: |
+          ./coverage-report/
+          api/**/TestResults/**/coverage.cobertura.xml
         retention-days: 30
     
     - name: Publish API (Optional - for deployment)
