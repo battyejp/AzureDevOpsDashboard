@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
-import Dashboard from './Dashboard';
+import Dashboard from './views/Dashboard';
 import { ApiService } from '../services/apiService';
 import { ConfigService } from '../services/configService';
 import { DeploymentEnvironment } from '../models/types';
@@ -92,7 +92,7 @@ describe('Dashboard Component', () => {
   });
 
   test('uses ConfigService for pipeline visibility', async () => {
-    const mockPipelines = [{ id: 1, name: 'Pipeline 1', folder: '', url: '' }];
+    const mockPipelines = [{ id: 1, name: 'Pipeline 1', folder: '', url: '', queueStatus: 'enabled' }];
     mockApiService.getPipelines.mockResolvedValue(mockPipelines);
     
     render(<Dashboard />);
