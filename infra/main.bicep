@@ -9,13 +9,10 @@ param location string = 'eastus2'
 @description('The name of the application')
 param appName string = 'azdevops-dashboard'
 
-@description('The GitHub repository URL')
+@description('The GitHub repository URL (reserved for future use)')
 param repositoryUrl string
 
-@description('The GitHub branch to deploy from')
-param branch string = 'main'
-
-@description('GitHub repository token for deployment')
+@description('The GitHub repository token for deployment (reserved for future use)')
 @secure()
 param repositoryToken string
 
@@ -43,13 +40,11 @@ module staticWebApp 'modules/staticwebapp.bicep' = {
     staticWebAppName: staticWebAppName
     location: location
     tags: tags
-    repositoryUrl: repositoryUrl
-    branch: branch
-    repositoryToken: repositoryToken
   }
 }
 
 // Outputs
 output staticWebAppUrl string = staticWebApp.outputs.defaultHostname
 output staticWebAppName string = staticWebApp.outputs.name
+output staticWebAppResourceId string = staticWebApp.outputs.resourceId
 output resourceGroupName string = resourceGroup.name

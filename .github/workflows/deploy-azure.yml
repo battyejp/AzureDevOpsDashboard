@@ -107,7 +107,6 @@ jobs:
         # Extract outputs from the ARM deployment
         static_web_app_name="${{ steps.deploy-infra.outputs.staticWebAppName }}"
         static_web_app_url="${{ steps.deploy-infra.outputs.staticWebAppUrl }}"
-        static_web_app_token="${{ steps.deploy-infra.outputs.staticWebAppToken }}"
         resource_group_name="${{ steps.deploy-infra.outputs.resourceGroupName }}"
         
         echo "Extracted static web app name: $static_web_app_name"
@@ -125,10 +124,20 @@ jobs:
           exit 1
         fi
         
+        # Get the deployment token using Azure CLI
+        echo "🔑 Retrieving deployment token from Azure..."
+        static_web_app_token=$(az staticwebapp secrets list \
+          --name "$static_web_app_name" \
+          --resource-group "$resource_group_name" \
+          --query "properties.apiKey" \
+          --output tsv)
+        
         if [ -z "$static_web_app_token" ] || [ "$static_web_app_token" = "null" ]; then
-          echo "❌ ERROR: Static Web App token is empty or null"
+          echo "❌ ERROR: Failed to retrieve Static Web App deployment token"
           exit 1
         fi
+        
+        echo "✅ Successfully retrieved deployment token"
         
         # Set outputs for other steps
         echo "static-web-app-name=$static_web_app_name" >> $GITHUB_OUTPUT
