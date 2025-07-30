@@ -65,6 +65,26 @@
     ],
     "moduleNameMapper": {
       "^axios$": "axios/dist/node/axios.cjs"
+    },
+    "collectCoverageFrom": [
+      "src/**/*.{js,jsx,ts,tsx}",
+      "!src/**/*.d.ts",
+      "!src/index.tsx",
+      "!src/reportWebVitals.ts"
+    ],
+    "coverageReporters": [
+      "text",
+      "lcov",
+      "html",
+      "cobertura"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 30,
+        "functions": 35,
+        "lines": 35,
+        "statements": 35
+      }
     }
   },
   "devDependencies": {
