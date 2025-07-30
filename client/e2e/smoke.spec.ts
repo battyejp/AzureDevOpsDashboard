@@ -28,7 +28,7 @@ test.describe('Basic Smoke Tests', () => {
     const projectCombobox = page.locator('[role="combobox"]').first();
     await expect(projectCombobox).toBeVisible();
     
-    await page.screenshot({ path: 'test-results/home-page.png', fullPage: true });
+    await page.screenshot({ path: 'test-results/smoke-home-page.png', fullPage: true });
   });
 
   test('should navigate to builds page and show mock data', async ({ page }) => {
@@ -51,7 +51,7 @@ test.describe('Basic Smoke Tests', () => {
     const projectCombobox = page.locator('[role="combobox"]').first();
     await expect(projectCombobox).toBeVisible();
     
-    await page.screenshot({ path: 'test-results/builds-page.png', fullPage: true });
+    await page.screenshot({ path: 'test-results/smoke-builds-page.png', fullPage: true });
   });
 
   test('should navigate to configuration page', async ({ page }) => {
@@ -69,7 +69,7 @@ test.describe('Basic Smoke Tests', () => {
     
     // Wait for any content to load and take screenshot
     await page.waitForTimeout(1000);
-    await page.screenshot({ path: 'test-results/configuration-page.png', fullPage: true });
+    await page.screenshot({ path: 'test-results/smoke-configuration-page.png', fullPage: true });
   });
 
   test('should navigate to release page and display mock data', async ({ page }) => {
@@ -92,6 +92,6 @@ test.describe('Basic Smoke Tests', () => {
     const projectCombobox = page.locator('[role="combobox"]').first();
     await expect(projectCombobox).toBeVisible();
     
-    await page.screenshot({ path: 'test-results/release-page.png', fullPage: true });
+    await page.screenshot({ path: 'test-results/smoke-release-page.png', fullPage: true });
   });
 });

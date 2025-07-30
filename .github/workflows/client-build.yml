@@ -65,6 +65,154 @@ jobs:
       env:
         CI: true
 
+    - name: Organize test artifacts and generate summary
+      if: always()
+      run: |
+        # Run our artifact organization script
+        node scripts/organize-test-artifacts.js
+        
+        # Also generate GitHub Actions summary
+        echo "## 📸 Test Screenshots Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Check if test-results directory exists and has screenshots
+        if [ -d "test-results" ] && [ "$(ls -A test-results/ 2>/dev/null | grep -E '\.(png|jpg|jpeg)$' | wc -l)" -gt 0 ]; then
+          echo "### Screenshots from test run:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          for screenshot in test-results/*.png test-results/*.jpg test-results/*.jpeg 2>/dev/null; do
+            if [ -f "$screenshot" ]; then
+              filename=$(basename "$screenshot")
+              filesize=$(du -h "$screenshot" | cut -f1)
+              echo "- 🖼️ **$filename** ($filesize)" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📦 Screenshots are available in the 'playwright-test-results' artifact download." >> $GITHUB_STEP_SUMMARY
+        else
+          echo "ℹ️ No screenshots found in test-results directory." >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        # Check for videos
+        if [ -d "test-results" ] && [ "$(ls -A test-results/ 2>/dev/null | grep -E '\.(webm|mp4)$' | wc -l)" -gt 0 ]; then
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Videos from test run:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          for video in test-results/*.webm test-results/*.mp4 2>/dev/null; do
+            if [ -f "$video" ]; then
+              filename=$(basename "$video")
+              filesize=$(du -h "$video" | cut -f1)
+              echo "- 🎥 **$filename** ($filesize)" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+        fi
+        
+        # Also check playwright-report for failure screenshots
+        if [ -d "playwright-report" ]; then
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📊 Playwright HTML Report:" >> $GITHUB_STEP_SUMMARY
+          echo "Interactive test report with detailed screenshots and videos available in 'playwright-test-results' artifact." >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        # If this is a PR and tests failed, we could add more details
+        if [ "${{ github.event_name }}" = "pull_request" ] && [ -d "test-results" ]; then
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔍 How to view screenshots:" >> $GITHUB_STEP_SUMMARY
+          echo "1. Scroll down to the 'Artifacts' section of this workflow run" >> $GITHUB_STEP_SUMMARY
+          echo "2. Download the 'playwright-test-results' artifact" >> $GITHUB_STEP_SUMMARY
+          echo "3. Extract the zip file and navigate to:" >> $GITHUB_STEP_SUMMARY
+          echo "   - \`test-results/\` folder for individual screenshots and videos" >> $GITHUB_STEP_SUMMARY
+          echo "   - \`playwright-report/index.html\` for the full interactive report" >> $GITHUB_STEP_SUMMARY
+          echo "   - \`test-artifacts-summary.md\` for a detailed summary" >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: Comment on PR with screenshot info
+      if: always() && github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const path = require('path');
+          
+          // Check if there are screenshots in test-results
+          let screenshotInfo = '';
+          let screenshots = [];
+          let videos = [];
+          
+          try {
+            if (fs.existsSync('test-results')) {
+              const files = fs.readdirSync('test-results');
+              screenshots = files.filter(f => f.match(/\.(png|jpg|jpeg)$/i));
+              videos = files.filter(f => f.match(/\.(webm|mp4)$/i));
+              
+              if (screenshots.length > 0 || videos.length > 0) {
+                screenshotInfo = `## 📸 Test Artifacts Available\n\n`;
+                
+                if (screenshots.length > 0) {
+                  screenshotInfo += `**Screenshots (${screenshots.length}):**\n`;
+                  screenshots.forEach(f => {
+                    const stats = fs.statSync(path.join('test-results', f));
+                    screenshotInfo += `- 🖼️ ${f} (${(stats.size / 1024).toFixed(1)} KB)\n`;
+                  });
+                  screenshotInfo += '\n';
+                }
+                
+                if (videos.length > 0) {
+                  screenshotInfo += `**Videos (${videos.length}):**\n`;
+                  videos.forEach(f => {
+                    const stats = fs.statSync(path.join('test-results', f));
+                    screenshotInfo += `- 🎥 ${f} (${(stats.size / 1024 / 1024).toFixed(1)} MB)\n`;
+                  });
+                  screenshotInfo += '\n';
+                }
+                
+                screenshotInfo += `**📦 To view artifacts:**\n`;
+                screenshotInfo += `1. Go to the [workflow run](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})\n`;
+                screenshotInfo += `2. Scroll down to the 'Artifacts' section\n`;
+                screenshotInfo += `3. Download the 'playwright-test-results' artifact\n`;
+                screenshotInfo += `4. Extract and open:\n`;
+                screenshotInfo += `   - Screenshots: \`test-results/*.png\`\n`;
+                screenshotInfo += `   - Videos: \`test-results/*.webm\`\n`;
+                screenshotInfo += `   - Full report: \`playwright-report/index.html\`\n`;
+                screenshotInfo += `   - Summary: \`test-artifacts-summary.md\`\n\n`;
+                screenshotInfo += `*Artifacts are retained for 30 days.*`;
+              }
+            }
+          } catch (error) {
+            console.log('Could not check for screenshots:', error.message);
+          }
+          
+          if (screenshotInfo) {
+            // Find existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              (comment.body.includes('📸 Test Screenshots Available') || comment.body.includes('📸 Test Artifacts Available'))
+            );
+            
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: screenshotInfo
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: screenshotInfo
+              });
+            }
+          }
+
     - name: Upload Playwright test results
       uses: actions/upload-artifact@v4
       if: always()
@@ -73,6 +221,7 @@ jobs:
         path: |
           client/playwright-report/
           client/test-results/
+          client/test-artifacts-summary.md
         retention-days: 30
 
     - name: Upload CTRF report
