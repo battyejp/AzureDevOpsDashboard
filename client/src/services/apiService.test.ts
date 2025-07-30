@@ -58,7 +58,7 @@ describe('ApiService', () => {
 
     test('getPipelines should use mock service', async () => {
       const mockPipelines = [
-        { id: 1, name: 'Pipeline 1', folder: '', url: '' }
+        { id: 1, name: 'Pipeline 1', folder: '', url: '', queueStatus: 'enabled' }
       ];
       MockedMockApiService.getPipelines.mockResolvedValue(mockPipelines);
 
@@ -70,16 +70,21 @@ describe('ApiService', () => {
 
     test('getBuilds should use mock service', async () => {
       const mockBuilds = [
-        { 
-          id: 1, 
-          buildNumber: '1.0.1', 
-          status: 'completed', 
-          result: 'succeeded', 
+        {
+          id: 1,
+          buildNumber: '1.0.1',
+          status: 'completed',
+          result: 'succeeded',
           startTime: '2023-01-01T10:00:00Z',
           finishTime: '2023-01-01T10:30:00Z',
           url: 'https://example.com/build/1',
-          sourceBranch: 'refs/heads/main'
-        }
+          sourceBranch: 'refs/heads/main',
+          queueTime: '2023-01-01T09:50:00Z',
+          reason: 'individualCI',
+          tags: ['Xen-123'],
+          definition: { id: 1, name: 'Pipeline 1' },
+          project: { id: 'proj-1', name: 'Test Project' }
+        } as any // Cast as any to satisfy Build type for test
       ];
       MockedMockApiService.getBuilds.mockResolvedValue(mockBuilds);
 
@@ -113,10 +118,12 @@ describe('ApiService', () => {
       const mockJiraIssue = {
         id: 'PROJ-123',
         key: 'PROJ-123',
-        summary: 'Test Issue',
-        status: 'In Progress',
-        assignee: 'John Doe',
-        url: 'https://example.atlassian.net/browse/PROJ-123'
+        fields: {
+          summary: 'Test Issue',
+          status: { name: 'In Progress' },
+          assignee: 'John Doe',
+          priority: 'Medium'
+        }
       };
       MockedMockApiService.getJiraIssue.mockResolvedValue(mockJiraIssue);
 
@@ -148,8 +155,36 @@ describe('ApiService', () => {
       (appConfig as any).apiIsMocked = true;
       
       const mockBuilds = [
-        { id: 2, buildNumber: '1.0.2', status: 'completed', result: 'succeeded', startTime: '2023-01-02T10:00:00Z', finishTime: '2023-01-02T10:30:00Z', url: '', sourceBranch: 'main' },
-        { id: 1, buildNumber: '1.0.1', status: 'completed', result: 'succeeded', startTime: '2023-01-01T10:00:00Z', finishTime: '2023-01-01T10:30:00Z', url: '', sourceBranch: 'main' }
+        {
+          id: 2,
+          buildNumber: '1.0.2',
+          status: 'completed',
+          result: 'succeeded',
+          startTime: '2023-01-02T10:00:00Z',
+          finishTime: '2023-01-02T10:30:00Z',
+          url: '',
+          sourceBranch: 'main',
+          queueTime: '2023-01-02T09:50:00Z',
+          reason: 'individualCI',
+          tags: ['Xen-123'],
+          definition: { id: 1, name: 'Pipeline 1' },
+          project: { id: 'proj-1', name: 'Test Project' }
+        },
+        {
+          id: 1,
+          buildNumber: '1.0.1',
+          status: 'completed',
+          result: 'succeeded',
+          startTime: '2023-01-01T10:00:00Z',
+          finishTime: '2023-01-01T10:30:00Z',
+          url: '',
+          sourceBranch: 'main',
+          queueTime: '2023-01-01T09:50:00Z',
+          reason: 'individualCI',
+          tags: ['Xen-124'],
+          definition: { id: 1, name: 'Pipeline 1' },
+          project: { id: 'proj-1', name: 'Test Project' }
+        }
       ];
       MockedMockApiService.getBuilds.mockResolvedValue(mockBuilds);
 
