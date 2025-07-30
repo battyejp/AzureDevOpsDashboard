@@ -107,34 +107,37 @@ jobs:
         echo "Converting Bicep to ARM template..."
         az bicep build --file infra/main.bicep --outfile main.json
         
-        # Create deployment JSON payload
-        cat > deployment.json << 'EOF'
-        {
-          "location": "$LOCATION",
-          "properties": {
-            "template": TEMPLATE_PLACEHOLDER,
-            "parameters": {
-              "environment": {
-                "value": "prod"
-              },
-              "location": {
-                "value": "$LOCATION"
-              },
-              "repositoryUrl": {
-                "value": "https://github.com/${{ github.repository }}"
-              },
-              "repositoryToken": {
-                "value": "${{ secrets.GITHUB_TOKEN }}"
-              }
-            },
-            "mode": "Incremental"
-          }
-        }
-        EOF
+        # Create deployment JSON payload using jq to properly embed the template
+        echo "Creating deployment payload..."
+        TEMPLATE_JSON=$(cat main.json)
         
-        # Replace template placeholder with actual template content
-        sed -i "s|\"TEMPLATE_PLACEHOLDER\"|$(cat main.json | jq -c .)|g" deployment.json
-        sed -i "s|\$LOCATION|$LOCATION|g" deployment.json
+        # Use jq to create the deployment payload with proper JSON escaping
+        jq -n \
+          --arg location "$LOCATION" \
+          --argjson template "$TEMPLATE_JSON" \
+          --arg repoUrl "https://github.com/${{ github.repository }}" \
+          --arg repoToken "${{ secrets.GITHUB_TOKEN }}" \
+          '{
+            "location": $location,
+            "properties": {
+              "template": $template,
+              "parameters": {
+                "environment": {
+                  "value": "prod"
+                },
+                "location": {
+                  "value": $location
+                },
+                "repositoryUrl": {
+                  "value": $repoUrl
+                },
+                "repositoryToken": {
+                  "value": $repoToken
+                }
+              },
+              "mode": "Incremental"
+            }
+          }' > deployment.json
         
         # Start deployment using REST API
         DEPLOYMENT_URL="https://management.azure.com/subscriptions/$SUBSCRIPTION_ID/providers/Microsoft.Resources/deployments/$DEPLOYMENT_NAME?api-version=2021-04-01"
