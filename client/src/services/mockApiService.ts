@@ -228,6 +228,10 @@ export class MockApiService {
     const builds: Build[] = [];
     const now = new Date();
     
+    // Ensure at least one build matches release criteria (main branch + individualCI)
+    // This is especially important for small count requests like ReleaseView
+    const ensureReleaseCandidate = count <= 5;
+    
     for (let i = 0; i < count; i++) {
       // More varied timing - some builds closer together, some further apart
       const hoursApart = Math.random() < 0.3 ? 1 : Math.random() < 0.6 ? 3 : 6;
@@ -237,37 +241,27 @@ export class MockApiService {
       
       // Expanded and more realistic reasons and branches
       const reasons = [
-        'IndividualCI', 'Manual', 'Scheduled', 'PullRequest', 'BatchedCI', 
-        'CheckInShelveset', 'ValidateShelveset', 'Triggered', 'ResourceTrigger'
+        'individualCI', 'manual', 'scheduled', 'pullRequest'
       ];
       
       // Much more diverse branch patterns for comprehensive filtering
       const branches = [
         'refs/heads/main', 
-        'refs/heads/develop', 
-        'refs/heads/master',
-        'refs/heads/feature/payment-integration',
-        'refs/heads/feature/user-authentication',
-        'refs/heads/feature/mobile-api',
-        'refs/heads/feature/search-optimization',
-        'refs/heads/feature/notification-system',
-        'refs/heads/feature/reporting-dashboard',
-        'refs/heads/feature/admin-panel',
-        'refs/heads/feature/data-migration',
-        'refs/heads/feature/performance-improvements',
-        'refs/heads/hotfix/security-patch',
-        'refs/heads/hotfix/memory-leak',
-        'refs/heads/hotfix/critical-bug',
-        'refs/heads/bugfix/data-validation',
-        'refs/heads/bugfix/ui-layout',
-        'refs/heads/bugfix/api-timeout',
-        'refs/heads/release/2024.1',
-        'refs/heads/release/2024.2',
-        'refs/heads/release/v2.1.0',
-        'refs/pull/123/merge',
-        'refs/pull/456/merge',
-        'refs/pull/789/merge'
+        'refs/heads/develop'
       ];
+      
+      // For release view testing, ensure first build is always a main branch individualCI build
+      const selectedBranch = ensureReleaseCandidate && i === 0 
+        ? 'refs/heads/main'
+        : ensureReleaseCandidate 
+          ? 'refs/heads/main'
+          : branches[Math.floor(Math.random() * branches.length)];
+          
+      const selectedReason = ensureReleaseCandidate && i === 0
+        ? 'individualCI'
+        : ensureReleaseCandidate
+          ? 'individualCI'
+          : reasons[Math.floor(Math.random() * reasons.length)];
       
       // More realistic in-progress builds (only very recent ones)
       const status = i < 2 && Math.random() > 0.8 ? 'inProgress' : 'completed';
@@ -279,7 +273,7 @@ export class MockApiService {
       } else {
         const rand = Math.random();
         // Different success rates based on branch type for realism
-        const branch = branches[Math.floor(Math.random() * branches.length)];
+        const branch = selectedBranch;
         if (branch.includes('hotfix') || branch.includes('main') || branch.includes('master')) {
           // Higher success rate for critical branches
           if (rand < 0.85) result = 'succeeded';
@@ -320,8 +314,8 @@ export class MockApiService {
         startTime: startTime.toISOString(),
         finishTime: status === 'completed' ? finishTime.toISOString() : undefined,
         url: `https://dev.azure.com/mockorg/_build/results?buildId=${10000 + pipelineId * 100 + i}`,
-        sourceBranch: branches[Math.floor(Math.random() * branches.length)],
-        reason: reasons[Math.floor(Math.random() * reasons.length)],
+        sourceBranch: selectedBranch,
+        reason: selectedReason,
         tags: tags,
         definition: {
           id: pipelineId,
@@ -332,6 +326,17 @@ export class MockApiService {
           name: projectName || 'Mock Project'
         }
       });
+    }
+    
+    // Add debug logging to see what builds were generated
+    if (count <= 5) { // Only log for small requests like the ReleaseView
+      console.log(`MockAPI generateMockBuilds: Generated ${builds.length} builds for pipeline ${pipelineId}`);
+      console.log('MockAPI generateMockBuilds: Sample builds:', builds.slice(0, 3).map(b => ({ 
+        id: b.id, 
+        branch: b.sourceBranch, 
+        reason: b.reason,
+        buildNumber: b.buildNumber
+      })));
     }
     
     return builds;
@@ -399,11 +404,7 @@ export class MockApiService {
   private static generateMockTimeline(buildId: number): BuildTimeline {
     // More varied stages based on build type
     const stageVariations = [
-      ['Build', 'Test', 'Code Analysis', 'Package', 'Deploy to Dev'],
-      ['Build', 'Unit Tests', 'Integration Tests', 'Code Analysis', 'Package', 'Deploy to Dev', 'Smoke Tests'],
-      ['Build', 'Test', 'Security Scan', 'Package', 'Deploy to Dev', 'Integration Tests'],
-      ['Build', 'Test', 'Code Analysis', 'Package', 'Deploy to Dev', 'Deploy to Staging', 'End-to-End Tests'],
-      ['Restore', 'Build', 'Test', 'Code Analysis', 'Package', 'Publish Artifacts', 'Deploy to Dev']
+      ['Build', 'Deploy to Dev', 'Deploy to SIT', 'Deploy to UAT', 'Deploy to Prod'],
     ];
     
     const stages = stageVariations[buildId % stageVariations.length];
@@ -466,16 +467,29 @@ export class MockApiService {
     await new Promise(resolve => setTimeout(resolve, 400));
     
     let builds = this.generateMockBuilds(pipelineId, count, project);
+    console.log(`MockAPI getBuilds: Generated ${builds.length} builds for pipeline ${pipelineId}`);
+    console.log(`MockAPI getBuilds: Filters - branch: "${branch}", reason: "${reasonFilter}"`);
     
     // Apply filters
     if (branch && branch !== '') {
+      const beforeFilter = builds.length;
       builds = builds.filter(build => build.sourceBranch.includes(branch.replace('refs/heads/', '')));
+      console.log(`MockAPI getBuilds: Branch filter "${branch}" reduced builds from ${beforeFilter} to ${builds.length}`);
+      if (builds.length > 0) {
+        console.log('MockAPI getBuilds: Sample filtered builds:', builds.slice(0, 3).map(b => ({ id: b.id, branch: b.sourceBranch, reason: b.reason })));
+      }
     }
     
     if (reasonFilter && reasonFilter !== '') {
+      const beforeFilter = builds.length;
       builds = builds.filter(build => build.reason === reasonFilter);
+      console.log(`MockAPI getBuilds: Reason filter "${reasonFilter}" reduced builds from ${beforeFilter} to ${builds.length}`);
+      if (builds.length > 0) {
+        console.log('MockAPI getBuilds: Sample filtered builds:', builds.slice(0, 3).map(b => ({ id: b.id, branch: b.sourceBranch, reason: b.reason })));
+      }
     }
     
+    console.log(`MockAPI getBuilds: Returning ${builds.length} builds after all filters`);
     return builds;
   }
 
