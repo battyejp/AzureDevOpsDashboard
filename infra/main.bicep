@@ -36,31 +36,20 @@ resource resourceGroup 'Microsoft.Resources/resourceGroups@2023-07-01' = {
 }
 
 // Static Web App
-resource staticWebApp 'Microsoft.Web/staticSites@2023-01-01' = {
-  name: staticWebAppName
-  location: location
-  tags: tags
+module staticWebApp 'modules/staticwebapp.bicep' = {
+  name: 'staticWebApp'
   scope: resourceGroup
-  sku: {
-    name: 'Free'
-    tier: 'Free'
-  }
-  properties: {
+  params: {
+    staticWebAppName: staticWebAppName
+    location: location
+    tags: tags
     repositoryUrl: repositoryUrl
     branch: branch
     repositoryToken: repositoryToken
-    buildProperties: {
-      appLocation: '/client'
-      apiLocation: ''
-      outputLocation: 'build'
-      appBuildCommand: 'npm run build'
-      apiBuildCommand: ''
-      skipGithubActionWorkflowGeneration: true
-    }
   }
 }
 
 // Outputs
-output staticWebAppUrl string = staticWebApp.properties.defaultHostname
-output staticWebAppName string = staticWebApp.name
+output staticWebAppUrl string = staticWebApp.outputs.defaultHostname
+output staticWebAppName string = staticWebApp.outputs.name
 output resourceGroupName string = resourceGroup.name
