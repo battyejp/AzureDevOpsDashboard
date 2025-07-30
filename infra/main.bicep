@@ -4,7 +4,7 @@ targetScope = 'subscription'
 param environment string = 'prod'
 
 @description('The location where resources will be deployed')
-param location string = 'eastus'
+param location string = 'eastus2'
 
 @description('The name of the application')
 param appName string = 'azdevops-dashboard'
