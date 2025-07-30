@@ -18,10 +18,13 @@ describe('useJira Hook', () => {
   const mockJiraIssue: JiraIssue = {
     id: 'PROJ-123',
     key: 'PROJ-123',
-    summary: 'Test Issue',
-    status: 'In Progress',
-    assignee: 'John Doe',
-    url: 'https://example.atlassian.net/browse/PROJ-123'
+    fields: {
+      summary: 'Test Issue',
+      status: {
+        name: 'Open',
+      },
+      assignee: 'John Doe'
+    }
   };
 
   beforeEach(() => {
