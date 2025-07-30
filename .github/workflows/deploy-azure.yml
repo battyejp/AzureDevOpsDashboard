@@ -100,23 +100,70 @@ jobs:
       run: |
         set -e
         
-        # Deploy infrastructure (table output to avoid stream consumption issues)
-        echo "🚀 Starting infrastructure deployment..."
+        # Generate unique deployment name to avoid conflicts
+        DEPLOYMENT_NAME="azdevops-dashboard-$(date +%s)"
+        echo "🚀 Starting infrastructure deployment with name: $DEPLOYMENT_NAME"
+        
+        # Start deployment asynchronously to avoid stream consumption issues
         az deployment group create \
           --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
           --template-file infra/main.bicep \
           --parameters environment=${{ github.event.inputs.environment || 'prod' }} \
           --parameters repositoryUrl="https://github.com/${{ github.repository }}" \
           --parameters repositoryToken="${{ secrets.GITHUB_TOKEN }}" \
-          --output table
+          --name "$DEPLOYMENT_NAME" \
+          --no-wait \
+          --only-show-errors
         
-        echo "✅ Infrastructure deployment completed successfully!"
+        echo "✅ Deployment started successfully! Waiting for completion..."
         
-        # Now get the outputs in a separate command to avoid stream consumption issues
+        # Wait for deployment to complete and check status
+        max_attempts=60  # 10 minutes max (60 * 10 seconds)
+        attempt=0
+        
+        while [ $attempt -lt $max_attempts ]; do
+          echo "⏳ Checking deployment status (attempt $((attempt + 1))/$max_attempts)..."
+          
+          deployment_state=$(az deployment group show \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --name "$DEPLOYMENT_NAME" \
+            --query 'properties.provisioningState' \
+            --output tsv 2>/dev/null || echo "NotFound")
+          
+          echo "Current deployment state: $deployment_state"
+          
+          if [ "$deployment_state" = "Succeeded" ]; then
+            echo "🎉 Deployment completed successfully!"
+            break
+          elif [ "$deployment_state" = "Failed" ] || [ "$deployment_state" = "Canceled" ]; then
+            echo "❌ Deployment failed with state: $deployment_state"
+            # Get error details
+            az deployment group show \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --name "$DEPLOYMENT_NAME" \
+              --query 'properties.error' \
+              --output json || true
+            exit 1
+          elif [ "$deployment_state" = "NotFound" ]; then
+            echo "⚠️ Deployment not found, retrying..."
+          else
+            echo "⏳ Deployment in progress (state: $deployment_state), waiting..."
+          fi
+          
+          sleep 10
+          attempt=$((attempt + 1))
+        done
+        
+        if [ $attempt -eq $max_attempts ]; then
+          echo "❌ Deployment timed out after 10 minutes"
+          exit 1
+        fi
+        
+        # Now get the outputs safely
         echo "📋 Retrieving deployment outputs..."
         deployment_output=$(az deployment group show \
           --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-          --name main \
+          --name "$DEPLOYMENT_NAME" \
           --query 'properties.outputs' \
           --output json)
         
