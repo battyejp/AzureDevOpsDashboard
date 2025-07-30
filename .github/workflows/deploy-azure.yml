@@ -99,28 +99,52 @@ jobs:
       id: deploy-infra
       run: |
         set -e
-        deployment_output=$(az deployment group create \
+        
+        # Deploy infrastructure (table output to avoid stream consumption issues)
+        echo "🚀 Starting infrastructure deployment..."
+        az deployment group create \
           --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
           --template-file infra/main.bicep \
           --parameters environment=${{ github.event.inputs.environment || 'prod' }} \
           --parameters repositoryUrl="https://github.com/${{ github.repository }}" \
           --parameters repositoryToken="${{ secrets.GITHUB_TOKEN }}" \
+          --output table
+        
+        echo "✅ Infrastructure deployment completed successfully!"
+        
+        # Now get the outputs in a separate command to avoid stream consumption issues
+        echo "📋 Retrieving deployment outputs..."
+        deployment_output=$(az deployment group show \
+          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+          --name main \
           --query 'properties.outputs' \
           --output json)
-        echo "Deployment output: $deployment_output"
-        if [ -z "$deployment_output" ]; then
-          echo "ERROR: Deployment output is empty. The deployment may have failed."
+        
+        echo "Raw deployment output: $deployment_output"
+        
+        # Validate output is not empty
+        if [ -z "$deployment_output" ] || [ "$deployment_output" = "null" ]; then
+          echo "❌ ERROR: Deployment output is empty or null. The deployment may have failed."
           exit 1
         fi
-        # Extract outputs with error fallback
-        static_web_app_name=$(echo "$deployment_output" | jq -r '.staticWebAppName.value' || echo "JQ_ERROR")
-        static_web_app_url=$(echo "$deployment_output" | jq -r '.staticWebAppUrl.value' || echo "JQ_ERROR")
-        if [ "$static_web_app_name" = "JQ_ERROR" ] || [ "$static_web_app_url" = "JQ_ERROR" ]; then
-          echo "ERROR: Failed to parse deployment output with jq. Raw output: $deployment_output"
+        
+        # Extract outputs with error handling
+        static_web_app_name=$(echo "$deployment_output" | jq -r '.staticWebAppName.value // "ERROR"')
+        static_web_app_url=$(echo "$deployment_output" | jq -r '.staticWebAppUrl.value // "ERROR"')
+        
+        echo "Extracted static web app name: $static_web_app_name"
+        echo "Extracted static web app URL: $static_web_app_url"
+        
+        if [ "$static_web_app_name" = "ERROR" ] || [ "$static_web_app_url" = "ERROR" ] || [ "$static_web_app_name" = "null" ] || [ "$static_web_app_url" = "null" ]; then
+          echo "❌ ERROR: Failed to extract deployment outputs. Raw output: $deployment_output"
           exit 1
         fi
+        
+        # Set outputs for other steps
         echo "static-web-app-name=$static_web_app_name" >> $GITHUB_OUTPUT
         echo "static-web-app-url=https://$static_web_app_url" >> $GITHUB_OUTPUT
+        
+        # Create step summary
         echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "**Environment:** ${{ github.event.inputs.environment || 'prod' }}" >> $GITHUB_STEP_SUMMARY
