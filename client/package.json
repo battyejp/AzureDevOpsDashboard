@@ -68,6 +68,7 @@
     }
   },
   "devDependencies": {
-    "@playwright/test": "^1.54.1"
+    "@playwright/test": "^1.54.1",
+    "playwright-ctrf-json-reporter": "^0.0.22"
   }
 }
