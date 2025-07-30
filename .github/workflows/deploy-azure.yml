@@ -104,7 +104,9 @@ jobs:
         DEPLOYMENT_NAME="azdevops-dashboard-$(date +%s)"
         echo "🚀 Starting infrastructure deployment with name: $DEPLOYMENT_NAME"
         
-        # Start deployment asynchronously to avoid stream consumption issues
+        # Use a completely different approach - deploy without any output
+        # Redirect all output to avoid stream consumption issues
+        echo "Starting deployment..."
         az deployment group create \
           --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
           --template-file infra/main.bicep \
@@ -113,7 +115,10 @@ jobs:
           --parameters repositoryToken="${{ secrets.GITHUB_TOKEN }}" \
           --name "$DEPLOYMENT_NAME" \
           --no-wait \
-          --only-show-errors
+          --only-show-errors > /dev/null 2>&1 || {
+            echo "❌ Deployment initiation failed"
+            exit 1
+          }
         
         echo "✅ Deployment started successfully! Waiting for completion..."
         
@@ -124,11 +129,17 @@ jobs:
         while [ $attempt -lt $max_attempts ]; do
           echo "⏳ Checking deployment status (attempt $((attempt + 1))/$max_attempts)..."
           
-          deployment_state=$(az deployment group show \
+          # Check deployment status with error suppression
+          deployment_state=""
+          if az deployment group show \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
             --name "$DEPLOYMENT_NAME" \
             --query 'properties.provisioningState' \
-            --output tsv 2>/dev/null || echo "NotFound")
+            --output tsv > /tmp/deployment_state.txt 2>/dev/null; then
+            deployment_state=$(cat /tmp/deployment_state.txt)
+          else
+            deployment_state="NotFound"
+          fi
           
           echo "Current deployment state: $deployment_state"
           
@@ -137,12 +148,16 @@ jobs:
             break
           elif [ "$deployment_state" = "Failed" ] || [ "$deployment_state" = "Canceled" ]; then
             echo "❌ Deployment failed with state: $deployment_state"
-            # Get error details
+            # Get error details safely
             az deployment group show \
               --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
               --name "$DEPLOYMENT_NAME" \
               --query 'properties.error' \
-              --output json || true
+              --output json > /tmp/deployment_error.txt 2>/dev/null || true
+            if [ -f /tmp/deployment_error.txt ]; then
+              echo "Error details:"
+              cat /tmp/deployment_error.txt
+            fi
             exit 1
           elif [ "$deployment_state" = "NotFound" ]; then
             echo "⚠️ Deployment not found, retrying..."
@@ -159,13 +174,18 @@ jobs:
           exit 1
         fi
         
-        # Now get the outputs safely
+        # Now get the outputs safely using file-based approach
         echo "📋 Retrieving deployment outputs..."
-        deployment_output=$(az deployment group show \
+        if az deployment group show \
           --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
           --name "$DEPLOYMENT_NAME" \
           --query 'properties.outputs' \
-          --output json)
+          --output json > /tmp/deployment_output.txt 2>/dev/null; then
+          deployment_output=$(cat /tmp/deployment_output.txt)
+        else
+          echo "❌ ERROR: Failed to retrieve deployment outputs"
+          exit 1
+        fi
         
         echo "Raw deployment output: $deployment_output"
         
