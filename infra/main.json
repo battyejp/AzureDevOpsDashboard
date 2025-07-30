@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.36.177.2456",
-      "templateHash": "14269345797785326889"
+      "templateHash": "14100122886683412277"
     }
   },
   "parameters": {
@@ -33,13 +33,13 @@
     "repositoryUrl": {
       "type": "string",
       "metadata": {
-        "description": "The GitHub repository URL"
+        "description": "The GitHub repository URL (reserved for future use)"
       }
     },
     "repositoryToken": {
       "type": "securestring",
       "metadata": {
-        "description": "The GitHub repository token for deployment"
+        "description": "The GitHub repository token for deployment (reserved for future use)"
       }
     }
   },
