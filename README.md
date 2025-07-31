@@ -273,3 +273,102 @@ Playwright tests simulate real user interactions and verify the app end-to-end, 
 - **Mock Data**: Comprehensive mock services for testing without external dependencies
 
 ---
+
+## Deployment to Azure
+
+This application includes automated deployment scripts for Azure App Service. The deployment uses Azure Bicep for infrastructure as code and PowerShell scripts for orchestration.
+
+### Prerequisites
+
+Before deploying, ensure you have:
+
+- **Azure CLI** installed and configured
+- **Node.js** (v18+) and npm installed  
+- **Azure subscription** with appropriate permissions
+- **Azure DevOps PAT token** (for the API configuration)
+
+### Quick Deployment
+
+1. **Login to Azure:**
+   ```powershell
+   az login
+   ```
+
+2. **Deploy the application:**
+   ```powershell
+   .\redeploy.ps1
+   ```
+
+### Deployment Architecture
+
+The deployment creates the following Azure resources:
+
+- **Resource Group**: Container for all resources
+- **App Service Plan**: Linux-based hosting plan (B1 SKU by default)
+- **App Service**: Hosts the React frontend with Node.js runtime
+- **Application Insights**: Application monitoring and logging
+- **Log Analytics Workspace**: Centralized logging
+
+### Deployment Scripts
+
+#### `redeploy.ps1` - Main Deployment Script
+Orchestrates the full deployment process with options:
+
+```powershell
+# Basic deployment
+.\redeploy.ps1
+
+# Deploy with custom API URL
+.\redeploy.ps1 -ApiUrl "https://your-api.azurewebsites.net/api"
+
+# Skip infrastructure (web app only)
+.\redeploy.ps1 -SkipInfrastructure
+
+# Force complete redeployment
+.\redeploy.ps1 -Force
+
+# Deploy to different environment
+.\redeploy.ps1 -Environment "staging"
+```
+
+#### `deploy.ps1` - Infrastructure Deployment
+Uses Bicep templates to create Azure infrastructure:
+- Creates resource groups
+- Deploys App Service and related resources
+- Configures application settings
+
+#### `deploy-web.ps1` - Application Deployment
+Builds and deploys the React application:
+- Installs npm dependencies
+- Builds production React app
+- Creates deployment package with Node.js server
+- Deploys to Azure App Service
+
+### Configuration Files
+
+#### `main.bicep` - Infrastructure Template
+Defines all Azure resources with parameterized configuration:
+
+```bicep
+// Key parameters
+param apiUrl string              // External API endpoint
+param environment string        // dev/staging/prod
+param appServicePlanSku string  // Azure pricing tier
+param location string           // Azure region
+```
+
+#### `parameters.json` - Default Configuration
+Provides default values for Bicep parameters:
+
+```json
+{
+  "parameters": {
+    "resourcePrefix": { "value": "azdevops-dashboard" },
+    "location": { "value": "UK South" },
+    "apiUrl": { "value": "https://your-external-api-url.com/api" },
+    "environment": { "value": "dev" },
+    "appServicePlanSku": { "value": "B1" }
+  }
+}
+```
+---
