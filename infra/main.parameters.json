@@ -12,7 +12,7 @@
       "value": "https://github.com/battyejp/AzureDevOpsDashboard"
     },
     "branch": {
-      "value": "mainy"
+      "value": "main"
     },
     "repositoryToken": {
       "value": "$(GITHUB_TOKEN)"

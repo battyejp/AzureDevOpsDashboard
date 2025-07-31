@@ -52,4 +52,5 @@ module staticWebApp 'modules/staticwebapp.bicep' = {
 // Outputs
 output staticWebAppUrl string = staticWebApp.outputs.defaultHostname
 output staticWebAppName string = staticWebApp.outputs.name
+output staticWebAppToken string = listSecrets(resourceId(resourceGroup.name, 'Microsoft.Web/staticSites', staticWebApp.outputs.name), '2023-01-01').properties.apiKey
 output resourceGroupName string = resourceGroup.name
