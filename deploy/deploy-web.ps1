@@ -137,6 +137,11 @@ try {
     Copy-Item -Path (Join-Path $clientDir "server.js") -Destination $tempDeployDir -Force
     Copy-Item -Path (Join-Path $clientDir "package.json") -Destination $tempDeployDir -Force
     
+    # Create a production-specific package.json that uses node server.js for start
+    $packageJson = Get-Content (Join-Path $clientDir "package.json") | ConvertFrom-Json
+    $packageJson.scripts.start = "node server.js"
+    $packageJson | ConvertTo-Json -Depth 10 | Out-File -FilePath (Join-Path $tempDeployDir "package.json") -Encoding UTF8
+    
     # Create web.config for Azure App Service
     $webConfig = @"
 <?xml version="1.0" encoding="utf-8"?>
