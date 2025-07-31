@@ -13,8 +13,14 @@
 .PARAMETER WebAppName
     The name of the Azure App Service to deploy to
 
+.PARAMETER UseMockApi
+    Deploy with mock API instead of connecting to real backend (default: true)
+
 .EXAMPLE
     .\deploy-web.ps1 -ResourceGroupName "rg-myapp-dev" -WebAppName "myapp-web-dev-abc123"
+    
+.EXAMPLE
+    .\deploy-web.ps1 -ResourceGroupName "rg-myapp-dev" -WebAppName "myapp-web-dev-abc123" -UseMockApi $false
 #>
 
 param(
@@ -22,7 +28,10 @@ param(
     [string]$ResourceGroupName,
     
     [Parameter(Mandatory = $true)]
-    [string]$WebAppName
+    [string]$WebAppName,
+    
+    [Parameter(Mandatory = $false)]
+    [bool]$UseMockApi = $true
 )
 
 # Set error action preference
@@ -37,6 +46,7 @@ Write-Host "🚀 Deploying web application..." -ForegroundColor Blue
 Write-Host "   Resource Group: $ResourceGroupName" -ForegroundColor White
 Write-Host "   Web App Name: $WebAppName" -ForegroundColor White
 Write-Host "   Client Directory: $clientDir" -ForegroundColor White
+Write-Host "   Use Mock API: $UseMockApi" -ForegroundColor White
 Write-Host ""
 
 # Verify client directory exists
@@ -73,12 +83,30 @@ try {
     Write-Host "✅ Dependencies installed successfully" -ForegroundColor Green
 
     # Build the application
-    Write-Host "🔨 Building React application..." -ForegroundColor Blue
-    npm run build
-    if ($LASTEXITCODE -ne 0) {
-        throw "npm build failed"
+    if ($UseMockApi) {
+        Write-Host "🔨 Building React application (mock API mode)..." -ForegroundColor Blue
+        
+        # Ensure REACT_APP_API_URL is not set to force mock mode
+        Remove-Item Env:REACT_APP_API_URL -ErrorAction SilentlyContinue
+        $env:NODE_ENV = "production"
+        
+        npm run build
+        if ($LASTEXITCODE -ne 0) {
+            throw "npm build failed"
+        }
+        Write-Host "✅ Build completed successfully (using mock API)" -ForegroundColor Green
+    } else {
+        Write-Host "🔨 Building React application (real API mode)..." -ForegroundColor Blue
+        
+        # Use existing environment variables for real API
+        $env:NODE_ENV = "production"
+        
+        npm run build
+        if ($LASTEXITCODE -ne 0) {
+            throw "npm build failed"
+        }
+        Write-Host "✅ Build completed successfully (using real API)" -ForegroundColor Green
     }
-    Write-Host "✅ Build completed successfully" -ForegroundColor Green
 
     # Verify build directory exists
     $buildDir = Join-Path $clientDir "build"

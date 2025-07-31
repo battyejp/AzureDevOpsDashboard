@@ -19,6 +19,9 @@
 .PARAMETER Environment
     Override the environment from the previous deployment (dev, staging, prod)
 
+.PARAMETER UseMockApi
+    Deploy with mock API instead of connecting to real backend (default: true for frontend-only deployment)
+
 .EXAMPLE
     .\redeploy.ps1
     # Redeploy using previous configuration
@@ -48,7 +51,10 @@ param(
     
     [Parameter(Mandatory = $false)]
     [ValidateSet("dev", "staging", "prod")]
-    [string]$Environment
+    [string]$Environment,
+    
+    [Parameter(Mandatory = $false)]
+    [bool]$UseMockApi = $true
 )
 
 # Set error action preference
@@ -169,7 +175,8 @@ if ($deployWebApp) {
     try {
         & "$scriptDir\deploy-web.ps1" `
             -ResourceGroupName $DefaultConfig.ResourceGroupName `
-            -WebAppName $DefaultConfig.WebAppName
+            -WebAppName $DefaultConfig.WebAppName `
+            -UseMockApi $UseMockApi
         
         if ($LASTEXITCODE -ne 0) {
             throw "Web application deployment failed"
