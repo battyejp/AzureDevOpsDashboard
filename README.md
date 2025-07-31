@@ -273,3 +273,175 @@ Playwright tests simulate real user interactions and verify the app end-to-end, 
 - **Mock Data**: Comprehensive mock services for testing without external dependencies
 
 ---
+
+## Deployment to Azure
+
+This application includes automated deployment scripts for Azure App Service. The deployment uses Azure Bicep for infrastructure as code and PowerShell scripts for orchestration.
+
+### Prerequisites
+
+Before deploying, ensure you have:
+
+- **Azure CLI** installed and configured
+- **Node.js** (v18+) and npm installed  
+- **Azure subscription** with appropriate permissions
+- **Azure DevOps PAT token** (for the API configuration)
+
+### Quick Deployment
+
+1. **Login to Azure:**
+   ```powershell
+   az login
+   ```
+
+2. **Test prerequisites:**
+   ```powershell
+   cd deploy
+   .\test-deployment.ps1
+   ```
+
+3. **Deploy the application:**
+   ```powershell
+   .\redeploy.ps1
+   ```
+
+### Deployment Architecture
+
+The deployment creates the following Azure resources:
+
+- **Resource Group**: Container for all resources
+- **App Service Plan**: Linux-based hosting plan (B1 SKU by default)
+- **App Service**: Hosts the React frontend with Node.js runtime
+- **Application Insights**: Application monitoring and logging
+- **Log Analytics Workspace**: Centralized logging
+
+### Deployment Scripts
+
+#### `test-deployment.ps1`
+Validates all prerequisites before deployment:
+- Azure CLI installation and authentication
+- Node.js and npm availability
+- Project structure validation
+
+#### `redeploy.ps1` - Main Deployment Script
+Orchestrates the full deployment process with options:
+
+```powershell
+# Basic deployment
+.\redeploy.ps1
+
+# Deploy with custom API URL
+.\redeploy.ps1 -ApiUrl "https://your-api.azurewebsites.net/api"
+
+# Skip infrastructure (web app only)
+.\redeploy.ps1 -SkipInfrastructure
+
+# Force complete redeployment
+.\redeploy.ps1 -Force
+
+# Deploy to different environment
+.\redeploy.ps1 -Environment "staging"
+```
+
+#### `deploy.ps1` - Infrastructure Deployment
+Uses Bicep templates to create Azure infrastructure:
+- Creates resource groups
+- Deploys App Service and related resources
+- Configures application settings
+
+#### `deploy-web.ps1` - Application Deployment
+Builds and deploys the React application:
+- Installs npm dependencies
+- Builds production React app
+- Creates deployment package with Node.js server
+- Deploys to Azure App Service
+
+### Configuration Files
+
+#### `main.bicep` - Infrastructure Template
+Defines all Azure resources with parameterized configuration:
+
+```bicep
+// Key parameters
+param apiUrl string              // External API endpoint
+param environment string        // dev/staging/prod
+param appServicePlanSku string  // Azure pricing tier
+param location string           // Azure region
+```
+
+#### `parameters.json` - Default Configuration
+Provides default values for Bicep parameters:
+
+```json
+{
+  "parameters": {
+    "resourcePrefix": { "value": "azdevops-dashboard" },
+    "location": { "value": "UK South" },
+    "apiUrl": { "value": "https://your-external-api-url.com/api" },
+    "environment": { "value": "dev" },
+    "appServicePlanSku": { "value": "B1" }
+  }
+}
+```
+
+### Environment-Specific Deployments
+
+Create separate parameter files for different environments:
+
+```powershell
+# Create parameters.prod.json with production settings
+.\redeploy.ps1 -Environment "prod" -ApiUrl "https://prod-api.yourdomain.com/api"
+```
+
+### Post-Deployment Configuration
+
+After deployment, configure your application:
+
+1. **Update API URL** (if needed):
+   ```powershell
+   az webapp config appsettings set \
+     --resource-group rg-azdevops-dashboard-dev-uks \
+     --name your-webapp-name \
+     --settings REACT_APP_API_URL='https://your-api.com/api'
+   ```
+
+2. **View application logs:**
+   ```powershell
+   az webapp log tail \
+     --resource-group rg-azdevops-dashboard-dev-uks \
+     --name your-webapp-name
+   ```
+
+3. **Restart application:**
+   ```powershell
+   az webapp restart \
+     --resource-group rg-azdevops-dashboard-dev-uks \
+     --name your-webapp-name
+   ```
+
+### Deployment Output
+
+Successful deployment provides:
+- **Web App URL**: Direct link to your deployed application
+- **Resource names**: Generated Azure resource identifiers
+- **Useful commands**: Copy-paste commands for management
+
+### Troubleshooting
+
+Common deployment issues and solutions:
+
+- **"waiting for content"**: Usually resolved by redeploying the web application
+- **Module not found errors**: Ensure all dependencies are properly installed
+- **Authentication issues**: Verify Azure CLI login and permissions
+- **Build failures**: Check Node.js version compatibility (requires v18+)
+
+For detailed logs and debugging:
+```powershell
+# Enable detailed logging
+az webapp log config --application-logging filesystem --level information
+
+# View real-time logs
+az webapp log tail --provider filesystem
+```
+
+---

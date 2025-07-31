@@ -1,0 +1,21 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "resourcePrefix": {
+      "value": "azdevops-dashboard"
+    },
+    "location": {
+      "value": "UK South"
+    },
+    "apiUrl": {
+      "value": "https://your-external-api-url.com/api"
+    },
+    "environment": {
+      "value": "dev"
+    },
+    "appServicePlanSku": {
+      "value": "B1"
+    }
+  }
+}
