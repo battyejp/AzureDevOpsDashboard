@@ -294,13 +294,7 @@ Before deploying, ensure you have:
    az login
    ```
 
-2. **Test prerequisites:**
-   ```powershell
-   cd deploy
-   .\test-deployment.ps1
-   ```
-
-3. **Deploy the application:**
+2. **Deploy the application:**
    ```powershell
    .\redeploy.ps1
    ```
@@ -316,12 +310,6 @@ The deployment creates the following Azure resources:
 - **Log Analytics Workspace**: Centralized logging
 
 ### Deployment Scripts
-
-#### `test-deployment.ps1`
-Validates all prerequisites before deployment:
-- Azure CLI installation and authentication
-- Node.js and npm availability
-- Project structure validation
 
 #### `redeploy.ps1` - Main Deployment Script
 Orchestrates the full deployment process with options:
@@ -383,65 +371,4 @@ Provides default values for Bicep parameters:
   }
 }
 ```
-
-### Environment-Specific Deployments
-
-Create separate parameter files for different environments:
-
-```powershell
-# Create parameters.prod.json with production settings
-.\redeploy.ps1 -Environment "prod" -ApiUrl "https://prod-api.yourdomain.com/api"
-```
-
-### Post-Deployment Configuration
-
-After deployment, configure your application:
-
-1. **Update API URL** (if needed):
-   ```powershell
-   az webapp config appsettings set \
-     --resource-group rg-azdevops-dashboard-dev-uks \
-     --name your-webapp-name \
-     --settings REACT_APP_API_URL='https://your-api.com/api'
-   ```
-
-2. **View application logs:**
-   ```powershell
-   az webapp log tail \
-     --resource-group rg-azdevops-dashboard-dev-uks \
-     --name your-webapp-name
-   ```
-
-3. **Restart application:**
-   ```powershell
-   az webapp restart \
-     --resource-group rg-azdevops-dashboard-dev-uks \
-     --name your-webapp-name
-   ```
-
-### Deployment Output
-
-Successful deployment provides:
-- **Web App URL**: Direct link to your deployed application
-- **Resource names**: Generated Azure resource identifiers
-- **Useful commands**: Copy-paste commands for management
-
-### Troubleshooting
-
-Common deployment issues and solutions:
-
-- **"waiting for content"**: Usually resolved by redeploying the web application
-- **Module not found errors**: Ensure all dependencies are properly installed
-- **Authentication issues**: Verify Azure CLI login and permissions
-- **Build failures**: Check Node.js version compatibility (requires v18+)
-
-For detailed logs and debugging:
-```powershell
-# Enable detailed logging
-az webapp log config --application-logging filesystem --level information
-
-# View real-time logs
-az webapp log tail --provider filesystem
-```
-
 ---
