@@ -11,6 +11,8 @@
 # playwright test artifacts
 /test-results/
 /playwright-report/
+/ctrf/
+test-artifacts-summary.md
 
 # production
 /build
