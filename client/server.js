@@ -3,8 +3,19 @@ const fs = require('fs');
 const path = require('path');
 
 const port = process.env.PORT || 3001;
-// In deployment, the build files are in the same directory as server.js
-const buildDir = __dirname;
+
+// Detect if we're running locally or in Azure deployment
+// In Azure deployment, build files are copied to the same directory as server.js
+// In local development, build files are in a 'build' subdirectory
+const localBuildDir = path.join(__dirname, 'build');
+const azureBuildDir = __dirname;
+
+// Check if local build directory exists (local development)
+const buildDir = fs.existsSync(localBuildDir) && fs.existsSync(path.join(localBuildDir, 'index.html')) 
+  ? localBuildDir 
+  : azureBuildDir;
+
+console.log(`Using build directory: ${buildDir}`);
 
 const server = http.createServer((req, res) => {
   let filePath = path.join(buildDir, req.url === '/' ? 'index.html' : req.url);

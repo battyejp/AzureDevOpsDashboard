@@ -81,7 +81,7 @@ jobs:
       env:
         # Set any required environment variables for build
         REACT_APP_AZDEVOPS_ORGANIZATION: "placeholder"
-        REACT_APP_API_URL: "placeholder"
+        # Don't set REACT_APP_API_URL to ensure mock API is used
 
     - name: Install Playwright browsers
       run: npx playwright install --with-deps
