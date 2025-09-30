@@ -9,7 +9,7 @@ import {
 import { Link, useLocation } from 'react-router-dom';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import BuildIcon from '@mui/icons-material/Build';
-import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
+import LaunchIcon from '@mui/icons-material/Launch';
 import SettingsIcon from '@mui/icons-material/Settings';
 
 const Navigation: React.FC = () => {
@@ -29,7 +29,7 @@ const Navigation: React.FC = () => {
     {
       path: '/release',
       label: 'Release',
-      icon: <RocketLaunchIcon sx={{ mr: 1 }} />
+      icon: <LaunchIcon sx={{ mr: 1 }} />
     },
     {
       path: '/configuration',
