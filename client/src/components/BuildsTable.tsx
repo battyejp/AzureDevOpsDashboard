@@ -28,6 +28,7 @@ interface BuildsTableProps {
   title?: string;
   showEnvironment?: boolean;
   showPipeline?: boolean; // For showing pipeline names in release view
+  stageFilter?: string[]; // Filter builds by stage names
 }
 
 export const BuildsTable: React.FC<BuildsTableProps> = ({
@@ -40,8 +41,30 @@ export const BuildsTable: React.FC<BuildsTableProps> = ({
   selectedProject,
   title = 'Recent Builds',
   showEnvironment = false,
-  showPipeline = false
+  showPipeline = false,
+  stageFilter = []
 }) => {
+  // Filter builds based on stage filter
+  const filteredBuilds = React.useMemo(() => {
+    if (stageFilter.length === 0) {
+      return builds;
+    }
+    
+    return builds.filter(build => {
+      const timeline = buildTimelines.get(build.id);
+      if (!timeline || !timeline.records) {
+        return false; // Hide builds without timeline data when filter is active
+      }
+      
+      // Check if any of the build's stages match the filter
+      return timeline.records.some(record => 
+        stageFilter.includes(record.name) && 
+        record.result !== 'skipped' && 
+        record.result !== 'canceled'
+      );
+    });
+  }, [builds, buildTimelines, stageFilter]);
+
   if (builds.length === 0) {
     return (
       <Paper sx={{ p: 3 }}>
@@ -55,7 +78,7 @@ export const BuildsTable: React.FC<BuildsTableProps> = ({
   return (
     <Paper sx={{ p: 3 }}>
       <Typography variant="h6" gutterBottom>
-        {title} ({builds.length})
+        {title} ({filteredBuilds.length})
       </Typography>
       
       <TableContainer>
@@ -75,7 +98,7 @@ export const BuildsTable: React.FC<BuildsTableProps> = ({
             </TableRow>
           </TableHead>
           <TableBody>
-            {[...builds]
+            {[...filteredBuilds]
               .sort((a, b) => b.buildNumber.localeCompare(a.buildNumber, undefined, { numeric: true, sensitivity: 'base' }))
               .map((build) => {
               const projectName = build.project?.name || selectedProject;

@@ -58,6 +58,30 @@ const mockBuilds = [
   }
 ];
 
+const mockTimeline = {
+  id: '1',
+  records: [
+    {
+      id: 'stage1',
+      name: 'Build',
+      type: 'Stage',
+      state: 'completed',
+      result: 'succeeded',
+      startTime: '2024-01-01T00:01:00Z',
+      finishTime: '2024-01-01T00:05:00Z'
+    },
+    {
+      id: 'stage2',
+      name: 'Test',
+      type: 'Stage',
+      state: 'completed',
+      result: 'succeeded',
+      startTime: '2024-01-01T00:05:00Z',
+      finishTime: '2024-01-01T00:10:00Z'
+    }
+  ]
+};
+
 describe('ReleaseView', () => {
   beforeEach(() => {
     // Reset mocks
@@ -74,6 +98,9 @@ describe('ReleaseView', () => {
     
     // Mock builds
     mockApiService.getBuilds.mockResolvedValue(mockBuilds);
+    
+    // Mock timeline
+    mockApiService.getBuildTimeline.mockResolvedValue(mockTimeline);
     
     // Mock config service
     mockConfigService.getDefaultProject.mockReturnValue('Test Project');
@@ -151,5 +178,38 @@ describe('ReleaseView', () => {
         'individualCI' // reason filter
       );
     });
+  });
+
+  it('displays stage filter dropdown', async () => {
+    render(
+      <BrowserRouter>
+        <ReleaseView />
+      </BrowserRouter>
+    );
+
+    await waitFor(() => {
+      // Look for the stage filter in the filters section
+      const filters = screen.getByText('Filters').closest('div');
+      expect(filters).toContainHTML('Stage');
+    });
+  });
+
+  it('stage filter is initially empty and available', async () => {
+    render(
+      <BrowserRouter>
+        <ReleaseView />
+      </BrowserRouter>
+    );
+
+    // Wait for the component to render
+    await waitFor(() => {
+      const filters = screen.getByText('Filters').closest('div');
+      expect(filters).toContainHTML('Stage');
+    });
+
+    // Find all combobox elements (Project and Stage selects)
+    const comboboxes = screen.getAllByRole('combobox');
+    // Should have at least 2 comboboxes (Project and Stage)
+    expect(comboboxes.length).toBeGreaterThanOrEqual(2);
   });
 });

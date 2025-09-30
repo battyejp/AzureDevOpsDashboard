@@ -10,7 +10,10 @@ import {
   Box,
   Alert,
   CircularProgress,
-  SelectChangeEvent
+  SelectChangeEvent,
+  OutlinedInput,
+  Checkbox,
+  ListItemText
 } from '@mui/material';
 import { ApiService } from '../../services/apiService';
 import { ConfigService } from '../../services/configService';
@@ -19,6 +22,7 @@ import { appConfig } from '../../config/appConfig';
 import { extractJiraIssueKey } from '../../utils/jiraUtils';
 import { useJira } from '../../hooks/useJira';
 import { BuildsTable } from '../BuildsTable';
+import { getUniqueStages } from '../../utils/buildUtils';
 
 const ReleaseView: React.FC = () => {
   const [organization] = useState<string>(appConfig.azureDevOpsOrganization);
@@ -29,6 +33,7 @@ const ReleaseView: React.FC = () => {
   const [timelineLoading, setTimelineLoading] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+  const [stageFilter, setStageFilter] = useState<string[]>([]);
 
   // Use shared Jira hook
   const { jiraIssues, jiraLoading, loadJiraIssue } = useJira();
@@ -199,6 +204,16 @@ const ReleaseView: React.FC = () => {
     setSelectedProject(event.target.value);
   };
 
+  const handleStageFilterChange = (event: SelectChangeEvent<string[]>) => {
+    const value = event.target.value;
+    setStageFilter(typeof value === 'string' ? value.split(',') : value);
+  };
+
+  // Get unique stages from all build timelines
+  const availableStages = React.useMemo(() => {
+    return getUniqueStages(buildTimelines);
+  }, [buildTimelines]);
+
   // Convert pipeline builds to Build array for BuildsTable
   const buildsForTable: Build[] = pipelineBuilds
     .filter(pb => pb.build !== null)
@@ -223,7 +238,7 @@ const ReleaseView: React.FC = () => {
           display: 'grid',
           gridTemplateColumns: {
             xs: '1fr',
-            md: '1fr'
+            md: 'repeat(2, 1fr)'
           },
           gap: 3
         }}>
@@ -237,6 +252,24 @@ const ReleaseView: React.FC = () => {
               {projects.map((project) => (
                 <MenuItem key={project.id} value={project.name}>
                   {project.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <FormControl fullWidth disabled={availableStages.length === 0}>
+            <InputLabel>Stage</InputLabel>
+            <Select
+              multiple
+              value={stageFilter}
+              onChange={handleStageFilterChange}
+              input={<OutlinedInput label="Stage" />}
+              renderValue={(selected) => selected.length === 0 ? 'All' : selected.join(', ')}
+            >
+              {availableStages.map((stage) => (
+                <MenuItem key={stage} value={stage}>
+                  <Checkbox checked={stageFilter.indexOf(stage) > -1} />
+                  <ListItemText primary={stage} />
                 </MenuItem>
               ))}
             </Select>
@@ -271,6 +304,7 @@ const ReleaseView: React.FC = () => {
           showEnvironment={false}
           showPipeline={true}
           title={`Latest Builds from Main Branch`}
+          stageFilter={stageFilter}
         />
       ) : !loading && selectedProject ? (
         <Paper sx={{ p: 3 }}>

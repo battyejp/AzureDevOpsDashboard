@@ -99,3 +99,21 @@ export const branchOptions = [
   { value: 'release', label: 'release' },
   { value: '', label: 'All' },
 ];
+
+// Extract unique stage names from build timelines
+export const getUniqueStages = (buildTimelines: Map<number, { records: TimelineRecord[] }>): string[] => {
+  const stageNames = new Set<string>();
+  
+  buildTimelines.forEach(timeline => {
+    if (timeline && timeline.records) {
+      timeline.records.forEach(record => {
+        // Only include non-skipped stages
+        if (record.result !== 'skipped' && record.result !== 'canceled') {
+          stageNames.add(record.name);
+        }
+      });
+    }
+  });
+  
+  return Array.from(stageNames).sort();
+};
