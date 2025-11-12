@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Container,
   Paper,
@@ -30,18 +30,30 @@ const ReleaseView: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
 
+  // Use refs to track loading/loaded state to prevent race conditions
+  const loadedTimelinesRef = useRef<Set<number>>(new Set());
+  const loadingTimelinesRef = useRef<Set<number>>(new Set());
+
   // Use shared Jira hook
   const { jiraIssues, jiraLoading, loadJiraIssue } = useJira();
 
   // Load timeline for a specific build (memoized to avoid changing on every render)
   const loadBuildTimeline = useCallback(async (build: Build) => {
-    if (buildTimelines.has(build.id) || timelineLoading.has(build.id)) {
+    console.log(`[ReleaseView loadBuildTimeline] Called for build ${build.id}, loaded=${loadedTimelinesRef.current.has(build.id)}, loading=${loadingTimelinesRef.current.has(build.id)}`);
+
+    // Use refs to prevent race conditions - check and set atomically
+    if (loadedTimelinesRef.current.has(build.id) || loadingTimelinesRef.current.has(build.id)) {
+      console.log(`[ReleaseView loadBuildTimeline] SKIP - Build ${build.id} already loaded/loading`);
       return; // Already loaded or loading
     }
+
+    // Mark as loading immediately in ref (before async operation)
+    loadingTimelinesRef.current.add(build.id);
+    console.log(`[ReleaseView loadBuildTimeline] START - Loading timeline for build ${build.id}`);
+
     try {
-      // Add to loading set
+      // Also update state for UI
       setTimelineLoading(prev => new Set(prev).add(build.id));
-      console.log(`Loading timeline for build ${build.id}`);
       const timeline = await ApiService.getBuildTimeline(
         organization,
         selectedProject,
@@ -49,22 +61,25 @@ const ReleaseView: React.FC = () => {
         'Stage' // Only fetch Stage records, we'll filter out skipped ones in the frontend
       );
       if (timeline) {
-        console.log(`Got timeline for build ${build.id}:`, timeline);
+        console.log(`[ReleaseView loadBuildTimeline] SUCCESS - Got timeline for build ${build.id}`);
         setBuildTimelines(prev => new Map(prev).set(build.id, timeline));
+        loadedTimelinesRef.current.add(build.id);
       } else {
-        console.log(`No timeline data for build ${build.id}`);
+        console.log(`[ReleaseView loadBuildTimeline] NO DATA - No timeline data for build ${build.id}`);
       }
     } catch (err) {
-      console.error(`Error loading timeline for build ${build.id}:`, err);
+      console.error(`[ReleaseView loadBuildTimeline] ERROR - Error loading timeline for build ${build.id}:`, err);
     } finally {
-      // Remove from loading set
+      // Remove from loading sets
+      loadingTimelinesRef.current.delete(build.id);
       setTimelineLoading(prev => {
         const newSet = new Set(prev);
         newSet.delete(build.id);
         return newSet;
       });
+      console.log(`[ReleaseView loadBuildTimeline] DONE - Build ${build.id} complete, in loaded set=${loadedTimelinesRef.current.has(build.id)}`);
     }
-  }, [buildTimelines, timelineLoading, organization, selectedProject]);
+  }, [organization, selectedProject]);
 
   // Load projects on component mount
   useEffect(() => {
@@ -150,10 +165,13 @@ const ReleaseView: React.FC = () => {
 
         const pipelineBuildsData = await Promise.all(pipelineBuildPromises);
         setPipelineBuilds(pipelineBuildsData);
-        
+
         // Clear previous timelines when data changes
         setBuildTimelines(new Map());
         setTimelineLoading(new Set());
+        // Clear refs to allow reloading for new builds
+        loadedTimelinesRef.current.clear();
+        loadingTimelinesRef.current.clear();
 
       } catch (err: any) {
         const errorMessage = err?.message || 'Unknown error';
@@ -172,13 +190,17 @@ const ReleaseView: React.FC = () => {
   useEffect(() => {
     const buildsWithData = pipelineBuilds.filter(pb => pb.build !== null).map(pb => pb.build!);
     if (buildsWithData.length > 0) {
+      console.log(`[ReleaseView] Timeline auto-load effect triggered for ${buildsWithData.length} builds`);
       // Auto-load timelines for all builds
       buildsWithData.forEach((build: Build, index: number) => {
         // Stagger the requests to avoid overwhelming the API
         setTimeout(() => loadBuildTimeline(build), index * 200);
       });
     }
-  }, [pipelineBuilds, loadBuildTimeline]);
+    // Note: Intentionally not including loadBuildTimeline in deps to prevent re-triggering
+    // when timelines are loaded. The function has its own guards against duplicate loads.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pipelineBuilds]);
 
   // Auto-load Jira issues for builds with matching tags
   useEffect(() => {
@@ -193,7 +215,10 @@ const ReleaseView: React.FC = () => {
         }
       });
     }
-  }, [pipelineBuilds, loadJiraIssue]);
+    // Note: Intentionally not including loadJiraIssue in deps to prevent re-triggering
+    // when Jira issues are loaded. The Jira hook has its own guards against duplicate loads.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pipelineBuilds]);
 
   const handleProjectChange = (event: SelectChangeEvent<string>) => {
     setSelectedProject(event.target.value);

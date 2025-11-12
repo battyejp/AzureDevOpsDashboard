@@ -3,8 +3,17 @@ const fs = require('fs');
 const path = require('path');
 
 const port = process.env.PORT || 3001;
-// In deployment, the build files are in the same directory as server.js
-const buildDir = __dirname;
+// Prefer a 'public' or 'build' directory when present (dev vs. deployed build).
+// In deployment the build files may be co-located with server.js, but in dev
+// Create React App keeps static files in the 'public' folder.
+let buildDir = __dirname;
+const publicDir = path.join(__dirname, 'public');
+const buildSubdir = path.join(__dirname, 'build');
+if (fs.existsSync(buildSubdir)) {
+  buildDir = buildSubdir;
+} else if (fs.existsSync(publicDir)) {
+  buildDir = publicDir;
+}
 
 const server = http.createServer((req, res) => {
   let filePath = path.join(buildDir, req.url === '/' ? 'index.html' : req.url);
@@ -57,4 +66,6 @@ const server = http.createServer((req, res) => {
 
 server.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
+  console.log(`Serving files from: ${buildDir}`);
+  console.log(`Files in directory:`, fs.readdirSync(buildDir));
 });

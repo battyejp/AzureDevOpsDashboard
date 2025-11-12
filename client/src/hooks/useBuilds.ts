@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { ApiService } from '../services/apiService';
 import { ConfigService } from '../services/configService';
 import { Project, Pipeline, Build, BuildTimeline, DeploymentEnvironment } from '../models/types';
@@ -32,6 +32,10 @@ export const useBuilds = (options: UseBuildsOptions = {}) => {
   const [branchFilter, setBranchFilter] = useState<string>('');
   const [reasonFilter, setReasonFilter] = useState<string>('');
 
+  // Use refs to track loading/loaded state to prevent race conditions
+  const loadedTimelinesRef = useRef<Set<number>>(new Set());
+  const loadingTimelinesRef = useRef<Set<number>>(new Set());
+
   // Use shared Jira hook
   const { jiraIssues, jiraLoading, loadJiraIssue } = useJira();
 
@@ -44,13 +48,21 @@ export const useBuilds = (options: UseBuildsOptions = {}) => {
 
   // Load timeline for a specific build (memoized to avoid changing on every render)
   const loadBuildTimeline = useCallback(async (build: Build) => {
-    if (buildTimelines.has(build.id) || timelineLoading.has(build.id)) {
+    console.log(`[loadBuildTimeline] Called for build ${build.id}, loaded=${loadedTimelinesRef.current.has(build.id)}, loading=${loadingTimelinesRef.current.has(build.id)}`);
+
+    // Use refs to prevent race conditions - check and set atomically
+    if (loadedTimelinesRef.current.has(build.id) || loadingTimelinesRef.current.has(build.id)) {
+      console.log(`[loadBuildTimeline] SKIP - Build ${build.id} already loaded/loading`);
       return; // Already loaded or loading
     }
+
+    // Mark as loading immediately in ref (before async operation)
+    loadingTimelinesRef.current.add(build.id);
+    console.log(`[loadBuildTimeline] START - Loading timeline for build ${build.id}`);
+
     try {
-      // Add to loading set
+      // Also update state for UI
       setTimelineLoading(prev => new Set(prev).add(build.id));
-      console.log(`Loading timeline for build ${build.id}`);
       const timeline = await ApiService.getBuildTimeline(
         organization,
         selectedProject,
@@ -58,22 +70,25 @@ export const useBuilds = (options: UseBuildsOptions = {}) => {
         'Stage' // Only fetch Stage records, we'll filter out skipped ones in the frontend
       );
       if (timeline) {
-        console.log(`Got timeline for build ${build.id}:`, timeline);
+        console.log(`[loadBuildTimeline] SUCCESS - Got timeline for build ${build.id}`);
         setBuildTimelines(prev => new Map(prev).set(build.id, timeline));
+        loadedTimelinesRef.current.add(build.id);
       } else {
-        console.log(`No timeline data for build ${build.id}`);
+        console.log(`[loadBuildTimeline] NO DATA - No timeline data for build ${build.id}`);
       }
     } catch (err) {
-      console.error(`Error loading timeline for build ${build.id}:`, err);
+      console.error(`[loadBuildTimeline] ERROR - Error loading timeline for build ${build.id}:`, err);
     } finally {
-      // Remove from loading set
+      // Remove from loading sets
+      loadingTimelinesRef.current.delete(build.id);
       setTimelineLoading(prev => {
         const newSet = new Set(prev);
         newSet.delete(build.id);
         return newSet;
       });
+      console.log(`[loadBuildTimeline] DONE - Build ${build.id} complete, in loaded set=${loadedTimelinesRef.current.has(build.id)}`);
     }
-  }, [buildTimelines, timelineLoading, organization, selectedProject]);
+  }, [organization, selectedProject]);
 
   // Load projects on component mount
   useEffect(() => {
@@ -203,6 +218,9 @@ export const useBuilds = (options: UseBuildsOptions = {}) => {
         // Clear previous timelines when builds change
         setBuildTimelines(new Map());
         setTimelineLoading(new Set());
+        // Clear refs to allow reloading for new builds
+        loadedTimelinesRef.current.clear();
+        loadingTimelinesRef.current.clear();
       } catch (err: any) {
         const errorMessage = err?.message || 'Unknown error';
         setError(errorMessage);
@@ -219,13 +237,17 @@ export const useBuilds = (options: UseBuildsOptions = {}) => {
   // Auto-load timelines for all builds when builds change
   useEffect(() => {
     if (builds.length > 0 && autoLoadTimelines) {
+      console.log(`[useBuilds] Timeline auto-load effect triggered for ${builds.length} builds`);
       // Auto-load timelines for all builds
       builds.forEach((build: Build, index: number) => {
         // Stagger the requests to avoid overwhelming the API
         setTimeout(() => loadBuildTimeline(build), index * 200);
       });
     }
-  }, [builds, loadBuildTimeline, autoLoadTimelines]);
+    // Note: Intentionally not including loadBuildTimeline in deps to prevent re-triggering
+    // when timelines are loaded. The function has its own guards against duplicate loads.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [builds, autoLoadTimelines]);
 
   // Auto-load Jira issues for builds with matching tags
   useEffect(() => {
@@ -239,7 +261,10 @@ export const useBuilds = (options: UseBuildsOptions = {}) => {
         }
       });
     }
-  }, [builds, loadJiraIssue, autoLoadJira]);
+    // Note: Intentionally not including loadJiraIssue in deps to prevent re-triggering
+    // when Jira issues are loaded. The Jira hook has its own guards against duplicate loads.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [builds, autoLoadJira]);
 
   return {
     // State

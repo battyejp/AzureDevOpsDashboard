@@ -47,6 +47,8 @@ namespace AzDevOpsApi.Controllers
             var mcpUrl = _configuration["Mcp:Url"] ?? string.Empty;
             var mcpApiKey = _configuration["Mcp:ApiKey"] ?? string.Empty;
 
+            // Remove trailing slash to avoid double slashes in URL
+            mcpUrl = mcpUrl.TrimEnd('/');
             var requestUrl = $"{mcpUrl}/rest/api/2/issue/{issueKey}";
 
             var client = _httpClientFactory.CreateClient();
@@ -61,7 +63,8 @@ namespace AzDevOpsApi.Controllers
             {
                 try
                 {
-                    var model = System.Text.Json.JsonSerializer.Deserialize<JiraIssue>(content, new System.Text.Json.JsonSerializerOptions {
+                    var model = System.Text.Json.JsonSerializer.Deserialize<JiraIssue>(content, new System.Text.Json.JsonSerializerOptions
+                    {
                         PropertyNameCaseInsensitive = true
                     });
                     return Ok(model);
